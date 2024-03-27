@@ -4,7 +4,7 @@
 #include "inc/common.h"
 #include "inc/memory.h"
 
-// Memory Map 
+// Get memory map type
 const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
     switch (type) {
         case EfiReservedMemoryType: return L"EfiReservedMemoryType";
@@ -27,11 +27,13 @@ const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
     }
 }
 
+// Allocate memory map
 EFI_STATUS allocate_memmap(memmap *map, UINTN buffer_size) {
     map->buffer_size = buffer_size;
     return gBS->AllocatePool(EfiLoaderData, buffer_size, &map->buffer);
 }
 
+// Initalize memory map
 void init_memmap(memmap *map) {
     map->buffer = NULL;
     map->buffer_size = 0;
@@ -42,41 +44,43 @@ void init_memmap(memmap *map) {
     map->desc_entry = 0;
 }
 
+// Get memory map
 EFI_STATUS get_memmap(memmap *map) {
     EFI_STATUS status = EFI_SUCCESS;
     if (map->buffer_size == 0 && map->buffer == NULL) {
         status = allocate_memmap(map, INIT_MAP_SIZE);
+
         if (EFI_ERROR(status)) {
             PrintError();
             Print(L"Allocate Pool\n");
             return status;
         }
-        PrintOK();
-        Print(L"Allocate Memory Map\n");
+
     }
     while(1) {
         map->map_size = map->buffer_size;
         status = gBS->GetMemoryMap(&map->map_size, (EFI_MEMORY_DESCRIPTOR *)map->buffer, &map->map_key, &map->desc_size, &map->desc_ver);
         if (status == EFI_BUFFER_TOO_SMALL) {
-            PrintWarn();
-            Print(L"Buffer size is too small. will try again !\n");
+            // Calculate buffer size
             const UINTN buffer_size = (map->map_size) + (map->desc_size * 4);
-            Print(L"[ INFO ] Memory Map Size %lu\n", buffer_size);
-            // Free Pool
+
+            // Free up of memory
             status = gBS->FreePool(map->buffer);
             if (EFI_ERROR(status)) {
                 PrintError();
                 Print(L"Free Pool : %r\n", status);
             }
 
-            // Try Again !
+            // Try again
             status = allocate_memmap(map, buffer_size);
             if (EFI_ERROR(status)) {
                 PrintError();
                 Print(L"Allocate Pool\n");
             }
+
             continue;
         }
+
         if (EFI_ERROR(status)) {
             PrintError();
             Print(L"Unknown Error : %r", status);
@@ -94,16 +98,15 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *roo
     // Header
     CHAR8 *header = "Index, Buffer, Type, Type(name), PhysicalStart, VirtualStart, NumberOfPages, Size, Attribute\n"
                     "-----|------------------|----|----------------------|------------------|------------------|------------------|-----|----------------|\n";
-    size = AsciiStrLen(header); // 211
+    size = AsciiStrLen(header);
 
     // Open memory map file
     status = root_dir->Open(root_dir, &f, L"\\memmap.blmm", EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE, 0);
+    
     if (EFI_ERROR(status)) {
         PrintError();
         Print(L"Create a file : %r\n", status);
     }
-    PrintOK();
-    Print(L"Create a file 'memmap.blmm' \n");
 
     // Write header
     status = f->Write(f, &size, header);
@@ -111,8 +114,6 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *roo
         PrintError();
         Print(L"Write header : %r\n", status);
     }
-    PrintOK();
-    Print(L"Write header\n");
 
     // Write memory map
     EFI_PHYSICAL_ADDRESS iter;
@@ -129,7 +130,6 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *roo
         }
     }
     f->Close(f);
-
 
     return EFI_SUCCESS;
 }
