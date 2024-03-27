@@ -1,5 +1,6 @@
 #include <efi.h>
 #include <efilib.h>
+#include <efigpt.h>
 
 #include "memory.h"
 
@@ -83,9 +84,12 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 }
 
 
-EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *ST) {
+EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *SystemTable) {
     // Initalize
-    InitializeLib(IH, ST);
+    InitializeLib(IH, SystemTable);
+    ST = SystemTable;
+    BS = SystemTable->BootServices;
+    RT = SystemTable->RuntimeServices;
 
     // Open LIP
     EFI_LOADED_IMAGE_PROTOCOL *lip;
@@ -108,4 +112,7 @@ EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *ST) {
 
     // Free up of memory
     FreePool(map.buffer);
+
+    // Get partition table
+    
 }
