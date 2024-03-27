@@ -2,6 +2,7 @@
 #include <efilib.h>
 
 #include "inc/common.h"
+#include "inc/memory.h"
 
 // Memory Map 
 const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
@@ -67,6 +68,7 @@ EFI_STATUS get_memmap(memmap *map) {
                 PrintError();
                 Print(L"Free Pool : %r\n", status);
             }
+
             // Try Again !
             status = allocate_memmap(map, buffer_size);
             if (EFI_ERROR(status)) {
@@ -79,42 +81,21 @@ EFI_STATUS get_memmap(memmap *map) {
             PrintError();
             Print(L"Unknown Error : %r", status);
         }
+
         return EFI_SUCCESS;
     }
-}
-
-EFI_STATUS print_memmap(memmap *map) {
-    // Print header
-    Print(L"\n [ INFO ] Memory Map \n");
-    UINT16 *header = L"Index, Buffer, Type, Type(name), PhysicalStart, VirtualStart, NumberOfPages, Size, Attribute";
-    Print(L"%-ls\n", header);
-    int i;
-    EFI_PHYSICAL_ADDRESS iter;
-    UINTN mem_size = 0;
-    for (iter = (EFI_PHYSICAL_ADDRESS)map->buffer, i = 0;
-    iter < (EFI_PHYSICAL_ADDRESS)map->buffer + map->map_size;
-    iter += map->desc_size, i++) {
-        EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)iter;
-        Print(L"%02d, %016x, %02x, %-ls, %016x, %016x, %016x, %d, %016x \n", i, desc, desc->Type, get_memtype(desc->Type), desc->PhysicalStart, desc->VirtualStart, desc->NumberOfPages, desc->NumberOfPages, desc->Attribute);
-        mem_size += desc->NumberOfPages;
-    }
-    // Entryを変更
-    map->desc_entry = (UINT64)i;
-    Print(L"\n");
-    PrintOK();
-    Print(L"Print Memory Map\n");
-    Print(L"[ INFO ] Number Of Pages : %lu\n", (mem_size + 0xfff) / 0x1000);
-    return EFI_SUCCESS;
 }
 
 EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *root_dir) {
     char buffer[256];
     EFI_STATUS status;
     UINTN size;
+
     // Header
     CHAR8 *header = "Index, Buffer, Type, Type(name), PhysicalStart, VirtualStart, NumberOfPages, Size, Attribute\n"
                     "-----|------------------|----|----------------------|------------------|------------------|------------------|-----|----------------|\n";
     size = AsciiStrLen(header); // 211
+
     // Open memory map file
     status = root_dir->Open(root_dir, &f, L"\\memmap.blmm", EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE, 0);
     if (EFI_ERROR(status)) {
@@ -123,6 +104,7 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *roo
     }
     PrintOK();
     Print(L"Create a file 'memmap.blmm' \n");
+
     // Write header
     status = f->Write(f, &size, header);
     if (EFI_ERROR(status)) {
@@ -131,6 +113,7 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *roo
     }
     PrintOK();
     Print(L"Write header\n");
+
     // Write memory map
     EFI_PHYSICAL_ADDRESS iter;
     int i;
@@ -145,8 +128,8 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *roo
             Print(L"Write Memory Map : %r\n", status);
         }
     }
-    PrintOK();
-    Print(L"Save Memory Map\n");
     f->Close(f);
+
+
     return EFI_SUCCESS;
 }
