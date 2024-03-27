@@ -108,8 +108,4 @@ EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *ST) {
 
     // Free up of memory
     FreePool(map.buffer);
-
-
-
-
 }
