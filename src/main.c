@@ -92,7 +92,7 @@ EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *SystemTable) {
     RT = SystemTable->RuntimeServices;
 
     // Open LIP
-    EFI_LOADED_IMAGE_PROTOCOL *lip;
+    EFI_LOADED_IMAGE_PROTOCOL *lip = NULL;
     EFI_GUID lip_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 
     open_protocol(IH, &lip_guid, (void **)&lip, IH, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
@@ -107,12 +107,17 @@ EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *SystemTable) {
     ASSERT(map.buffer != NULL);
 
     // Save memory map
-    EFI_FILE_PROTOCOL *memmap_file;
-    save_memmap(&map, memmap_file, esp_root);
+    EFI_FILE_PROTOCOL *memmap_file = NULL;
+    save_memmap(&map, memmap_file, &esp_root);
 
     // Free up of memory
     FreePool(map.buffer);
 
-    // Get partition table
-    
+    // Open Block IO Protocol
+    EFI_BLOCK_IO *block_io;
+    EFI_GUID block_io_guid = EFI_BLOCK_IO_PROTOCOL_GUID;
+    open_protocol(lip->DeviceHandle, &block_io_guid, (VOID **)&block_io, IH, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+
+    //
+
 }
