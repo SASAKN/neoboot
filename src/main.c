@@ -74,11 +74,28 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp
     return EFI_SUCCESS;
 }
 
+// Open protocol
+EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI_HANDLE IH, UINT32 attr) {
+    EFI_STATUS status = uefi_call_wrapper(BS->OpenProtocol, 6, handle, guid, protocol, IH, NULL, attr);
+    ASSERT(!EFI_ERROR(status));
+
+    return EFI_SUCCESS;
+}
 
 
 EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *ST) {
     // Initalize
     InitializeLib(IH, ST);
+
+    // Open LIP
+    EFI_LOADED_IMAGE_PROTOCOL *lip;
+    EFI_GUID lip_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+
+    open_protocol(IH, &lip_guid, (void **)&lip, IH, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+
+    // Open ESP Root
+    EFI_FILE_HANDLE esp_root;
+    esp_root = LibOpenRoot(lip->DeviceHandle);
 
     // Get memory map
     memmap map;
@@ -86,6 +103,11 @@ EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *ST) {
     ASSERT(map.buffer != NULL);
 
     // Save memory map
+    EFI_FILE_PROTOCOL *memmap_file;
+    save_memmap(&map, memmap_file, esp_root);
+
+    // Free up of memory
+    FreePool(map.buffer);
 
 
 
