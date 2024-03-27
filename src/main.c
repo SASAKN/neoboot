@@ -118,6 +118,9 @@ EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *SystemTable) {
     EFI_GUID block_io_guid = EFI_BLOCK_IO_PROTOCOL_GUID;
     open_protocol(lip->DeviceHandle, &block_io_guid, (VOID **)&block_io, IH, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
-    //
+    // Get partitions info from block devices
+    EFI_BLOCK_IO_MEDIA *block_io_media = block_io->Media;
+    UINTN num_blocks = block_io_media->LastBlock + 1;
+    Print(L"Block Info : Blocks : %x", num_blocks);
 
 }
