@@ -4,6 +4,8 @@
 #include "inc/memory.h"
 
 
+
+
 // Main 
 EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *SystemTable) {
 
@@ -27,9 +29,10 @@ EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *SystemTable) {
     save_memmap(&map, memmap_f, root_dir);
 
     // Free up of memory
-    FreePool(map.buffer)
-    
+    FreePool(map.buffer);
 
+    // Get Partition Table
+    
 
 
 }
