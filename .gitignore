@@ -4,3 +4,4 @@ efi/
 *.efi
 *.o
 *.so
+gnu-efi/
