@@ -111,9 +111,18 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     Print(L"STEP3 \n");
 
     // Save memory map
-    EFI_FILE_PROTOCOL *memmap_file = NULL;
-    save_memmap(&map, memmap_file, esp_root);
-    Print(L"STEP4 \n");
+
+    // EFI_FILE_PROTOCOL *memmap_file = NULL;
+    // save_memmap(&map, memmap_file, esp_root);
+    // Print(L"STEP4 \n");
+
+    Print(L"Index, Buffer, Type, Type(name), PhysicalStart, VirtualStart, NumberOfPages, Size, Attribute\n-----|------------------|----|----------------------|------------------|------------------|------------------|-----|----------------|\n");
+    
+    // Print Memory map
+    for (UINTN i = 0; i < map.entry; i++) {
+        EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((char *)map.buffer + map.desc_size * i);
+        Print(L"| %02u | %016x | %02x | %20ls | %016x | %016x | %016x | %3d | %2ls %5lx | \n", i, desc, desc->Type, get_memtype(desc->Type), desc->PhysicalStart, desc->VirtualStart, desc->NumberOfPages,desc->NumberOfPages , (desc->Attribute & EFI_MEMORY_RUNTIME) ? L"RT" : L"", desc->Attribute & 0xffffflu);
+    }
 
     // Free up of memory
     FreePool(map.buffer);
@@ -128,7 +137,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Get partitions info from block devices
     EFI_BLOCK_IO_MEDIA *block_io_media = block_io->Media;
     UINTN num_blocks = block_io_media->LastBlock + 1;
-    Print(L"Block Info : Blocks : %x", num_blocks);
+    Print(L"Block Info : Blocks : %x\n", num_blocks);
     Print(L"STEP7 \n");
 
+    while(1) __asm__ ("hlt");
 }
