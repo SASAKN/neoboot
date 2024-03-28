@@ -108,7 +108,7 @@ EFI_STATUS efi_main(EFI_HANDLE IH, EFI_SYSTEM_TABLE *SystemTable) {
 
     // Save memory map
     EFI_FILE_PROTOCOL *memmap_file = NULL;
-    save_memmap(&map, memmap_file, &esp_root);
+    save_memmap(&map, memmap_file, esp_root);
 
     // Free up of memory
     FreePool(map.buffer);
