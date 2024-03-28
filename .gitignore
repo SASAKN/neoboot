@@ -1,3 +1,6 @@
 efi/
 .DS_Store
 .vscode/
+*.efi
+*.o
+*.so
