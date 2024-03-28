@@ -43,7 +43,7 @@ const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
 
 // Save memory map file
 EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp_root) {
-    char buffer[256];
+    char buffer[4096];
     EFI_STATUS status;
     UINTN size;
 
@@ -53,23 +53,21 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp
     size = strlena(header);
 
     // Create a file
-    status = uefi_call_wrapper(esp_root->Open, 5, esp_root, &f, L"\\neoboot\\memmap.blmm", EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE, 0);
-    ASSERT(!EFI_ERROR(status))
+    status = uefi_call_wrapper(esp_root->Open, 5, esp_root, &f, L"\\memmap", EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE, 0);
+    ASSERT(!EFI_ERROR(status));
 
     // Write header
     status = uefi_call_wrapper(f->Write, 3, f, &size, header);
     ASSERT(!EFI_ERROR(status));
-    Print(L"m3");
 
     // Write memory map
     for (UINTN i = 0; i < map->entry; i++) {
         EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((char *)map->buffer + map->desc_size * i);
-        size = AsciiSPrint(buffer, sizeof(buffer), "| %02u | %016x | %02x | %20ls | %016x | %016x | %016x | %3d | %2ls %5lx | \n", i, desc, desc->Type, get_memtype(desc->Type), desc->PhysicalStart, desc->VirtualStart, desc->NumberOfPages, (desc->Attribute & EFI_MEMORY_RUNTIME) ? L"RT" : L"", desc->Attribute & 0xffffflu);
+        size = AsciiSPrint(buffer, sizeof(buffer), "| %02u | %016x | %02x | %20ls | %016x | %016x | %016x | %3d | %2ls %5lx | \n", i, desc, desc->Type, get_memtype(desc->Type), desc->PhysicalStart, desc->VirtualStart, desc->NumberOfPages, desc->NumberOfPages, (desc->Attribute & EFI_MEMORY_RUNTIME) ? L"RT" : L"", desc->Attribute & 0xffffflu);
 
         status = uefi_call_wrapper(f->Write, 3, f, &size, buffer);
         ASSERT(!EFI_ERROR(status));
     }
-    Print(L"m4");
 
     // Close file handle
     uefi_call_wrapper(f->Close, 1, f);
