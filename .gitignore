@@ -5,3 +5,5 @@ efi/
 *.o
 *.so
 gnu-efi/
+OVMF.fd
+*.img
