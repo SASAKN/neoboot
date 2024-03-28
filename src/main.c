@@ -59,6 +59,7 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp
     // Write header
     status = uefi_call_wrapper(f->Write, 3, f, &size, header);
     ASSERT(!EFI_ERROR(status));
+    Print(L"m3");
 
     // Write memory map
     for (UINTN i = 0; i < map->entry; i++) {
@@ -68,6 +69,7 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp
         status = uefi_call_wrapper(f->Write, 3, f, &size, buffer);
         ASSERT(!EFI_ERROR(status));
     }
+    Print(L"m4");
 
     // Close file handle
     uefi_call_wrapper(f->Close, 1, f);
@@ -112,17 +114,15 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     // Save memory map
 
-    // EFI_FILE_PROTOCOL *memmap_file = NULL;
-    // save_memmap(&map, memmap_file, esp_root);
-    // Print(L"STEP4 \n");
-
-    Print(L"Index, Buffer, Type, Type(name), PhysicalStart, VirtualStart, NumberOfPages, Size, Attribute\n-----|------------------|----|----------------------|------------------|------------------|------------------|-----|----------------|\n");
+    EFI_FILE_PROTOCOL *memmap_file = NULL;
+    save_memmap(&map, memmap_file, esp_root);
+    Print(L"STEP4 \n");
     
-    // Print Memory map
-    for (UINTN i = 0; i < map.entry; i++) {
-        EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((char *)map.buffer + map.desc_size * i);
-        Print(L"| %02u | %016x | %02x | %20ls | %016x | %016x | %016x | %3d | %2ls %5lx | \n", i, desc, desc->Type, get_memtype(desc->Type), desc->PhysicalStart, desc->VirtualStart, desc->NumberOfPages,desc->NumberOfPages , (desc->Attribute & EFI_MEMORY_RUNTIME) ? L"RT" : L"", desc->Attribute & 0xffffflu);
-    }
+    // // Print Memory map
+    // for (UINTN i = 0; i < map.entry; i++) {
+    //     EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((char *)map.buffer + map.desc_size * i);
+    //     Print(L"| %02u | %016x | %02x | %20ls | %016x | %016x | %016x | %3d | %2ls %5lx | \n", i, desc, desc->Type, get_memtype(desc->Type), desc->PhysicalStart, desc->VirtualStart, desc->NumberOfPages,desc->NumberOfPages , (desc->Attribute & EFI_MEMORY_RUNTIME) ? L"RT" : L"", desc->Attribute & 0xffffflu);
+    // }
 
     // Free up of memory
     FreePool(map.buffer);
