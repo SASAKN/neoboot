@@ -82,6 +82,50 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
     return EFI_SUCCESS;
 }
 
+#define MAX_PARTITION_ENTRIES 128
+
+typedef struct {
+    EFI_PARTITION_TABLE_HEADER Header;
+    EFI_PARTITION_ENTRY Entries[MAX_PARTITION_ENTRIES];
+} GPT_HEADER_WITH_ENTRIES;
+
+GPT_HEADER_WITH_ENTRIES* read_gpt_header(EFI_HANDLE IH, EFI_BLOCK_IO *block_io) {
+    EFI_STATUS status;
+    UINT8 gpt_header_buffer[2000];
+
+    // Read GPT Header
+    status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io->Media->MediaId, 1, sizeof(gpt_header_buffer), gpt_header_buffer);
+    ASSERT(!EFI_ERROR(status));
+
+    // Is this block device is created by GPT ?
+    if (CompareMem(gpt_header_buffer, EFI_PTAB_HEADER_ID, 8) != 0) {
+        Print(L"This block device is not created by GPT.\n");
+        return NULL;
+    }
+
+    // Allocate memory for GPT header and entries
+    GPT_HEADER_WITH_ENTRIES *gpt_header_with_entries = AllocatePool(sizeof(GPT_HEADER_WITH_ENTRIES));
+    if (gpt_header_with_entries == NULL) {
+        Print(L"Failed to allocate memory for GPT header and entries.\n");
+        return NULL;
+    }
+
+    // Copy GPT header from buffer
+    CopyMem(&gpt_header_with_entries->Header, gpt_header_buffer, sizeof(EFI_PARTITION_TABLE_HEADER));
+
+    // Read GPT entries
+    status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io->Media->MediaId, gpt_header_with_entries->Header.PartitionEntryLBA,
+                               gpt_header_with_entries->Header.NumberOfPartitionEntries * gpt_header_with_entries->Header.SizeOfPartitionEntry,
+                               (UINT8*)gpt_header_with_entries->Entries);
+    if (EFI_ERROR(status)) {
+        Print(L"Failed to read GPT entries.\n");
+        FreePool(gpt_header_with_entries);
+        return NULL;
+    }
+
+    return gpt_header_with_entries;
+}
+
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     // Initalize
@@ -122,6 +166,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_BLOCK_IO_MEDIA *block_io_media = block_io->Media;
     UINTN num_blocks = block_io_media->LastBlock + 1;
     Print(L"Block Info : Blocks : %x\n", num_blocks);
+    read_gpt_header(ImageHandle, block_io);
 
     while(1) __asm__ ("hlt");
 }
