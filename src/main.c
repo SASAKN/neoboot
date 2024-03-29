@@ -97,10 +97,8 @@ GPT_HEADER_WITH_ENTRIES* read_gpt_header(EFI_HANDLE IH, EFI_BLOCK_IO *block_io) 
     status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io->Media->MediaId, 1, sizeof(gpt_header_buffer), gpt_header_buffer);
     ASSERT(!EFI_ERROR(status));
 
-    // Is this block device is created by GPT ?
-    if (CompareMem(gpt_header_buffer, EFI_PTAB_HEADER_ID, 8) != 0) {
-        Print(L"This block device is not created by GPT.\n");
-        return NULL;
+    for (UINTN i = 0; i < sizeof(gpt_header_buffer); i++) {
+        Print(L"%02x ", gpt_header_buffer[i]);
     }
 
     // Allocate memory for GPT header and entries

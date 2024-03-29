@@ -23,7 +23,7 @@ function loader_build() {
 # イメージファイルを作成
 function make_image() {
     # DMGファイルの作成 - ${IMAGE_PATH}.dmg
-    hdiutil create -size 1g -fs MS-DOS -volname ${VOLUME_NAME} ${IMAGE_PATH}
+    hdiutil create -size 1g -fs "FAT32" -layout GPTSPUD -volname ${VOLUME_NAME} ${IMAGE_PATH}
 
     # DMGファイルをCDRファイルに変換 - ${IMAGE_PATH}.cdr
     hdiutil convert ${IMAGE_PATH}.dmg -format UDTO -o ${IMAGE_PATH}
@@ -75,7 +75,7 @@ function run_image() {
     -drive if=ide,index=0,media=disk,format=raw,file=${IMAGE_PATH} \
     -device nec-usb-xhci,id=xhci \
     -device usb-mouse -device usb-kbd \
-    -monitor stdio
+    -nographic
 }
 
 #クリーン
