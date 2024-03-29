@@ -81,49 +81,50 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 
     return EFI_SUCCESS;
 }
+EFI_STATUS EFIAPI ShowPartitionEntries() {
+    EFI_STATUS Status;
+    EFI_HANDLE *HandleBuffer;
+    UINTN HandleCount;
+    UINTN Index;
 
-#define MAX_PARTITION_ENTRIES 128
-
-typedef struct {
-    EFI_PARTITION_TABLE_HEADER Header;
-    EFI_PARTITION_ENTRY Entries[MAX_PARTITION_ENTRIES];
-} GPT_HEADER_WITH_ENTRIES;
-
-GPT_HEADER_WITH_ENTRIES* read_gpt_header(EFI_HANDLE IH, EFI_BLOCK_IO *block_io) {
-    EFI_STATUS status;
-    UINT8 gpt_header_buffer[2000];
-
-    // Read GPT Header
-    status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io->Media->MediaId, 1, sizeof(gpt_header_buffer), gpt_header_buffer);
-    ASSERT(!EFI_ERROR(status));
-
-    for (UINTN i = 0; i < sizeof(gpt_header_buffer); i++) {
-        Print(L"%02x ", gpt_header_buffer[i]);
+    Status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &BlockIoProtocol, NULL, &HandleCount, &HandleBuffer);
+    if (EFI_ERROR(Status)) {
+        Print(L"Failed to locate Block IO handles\n");
+        return Status;
     }
 
-    // Allocate memory for GPT header and entries
-    GPT_HEADER_WITH_ENTRIES *gpt_header_with_entries = AllocatePool(sizeof(GPT_HEADER_WITH_ENTRIES));
-    if (gpt_header_with_entries == NULL) {
-        Print(L"Failed to allocate memory for GPT header and entries.\n");
-        return NULL;
+    Print(L"Partition Entries:\n");
+    for (Index = 0; Index < HandleCount; Index++) {
+        EFI_BLOCK_IO_PROTOCOL *BlockIo;
+        EFI_BLOCK_IO_MEDIA *Media;
+        CHAR16 *PartitionName;
+
+        Status = uefi_call_wrapper(BS->HandleProtocol, 3, HandleBuffer[Index], &BlockIoProtocol, (VOID**)&BlockIo);
+        if (EFI_ERROR(Status)) {
+            Print(L"Failed to get Block IO protocol\n");
+            continue;
+        }
+
+        Media = BlockIo->Media;
+
+        // デバイスパスには、BlockIo->DeviceHandleを直接使用せず、HandleBuffer[Index]を使用します。
+        EFI_DEVICE_PATH_PROTOCOL *DevicePath;
+        Status = uefi_call_wrapper(BS->HandleProtocol, 3, HandleBuffer[Index], &DevicePathProtocol, (VOID**)&DevicePath);
+        if (EFI_ERROR(Status)) {
+            Print(L"Failed to get DevicePath protocol\n");
+            continue;
+        }
+        PartitionName = DevicePath->DevicePath;
+        if (PartitionName == NULL) {
+            PartitionName = L"Unknown";
+        }
+
+        Print(L"Partition: %s, Start LBA: %llu, End LBA: %llu\n", PartitionName, Media->MediaId, Media->LastBlock);
     }
 
-    // Copy GPT header from buffer
-    CopyMem(&gpt_header_with_entries->Header, gpt_header_buffer, sizeof(EFI_PARTITION_TABLE_HEADER));
-
-    // Read GPT entries
-    status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io->Media->MediaId, gpt_header_with_entries->Header.PartitionEntryLBA,
-                               gpt_header_with_entries->Header.NumberOfPartitionEntries * gpt_header_with_entries->Header.SizeOfPartitionEntry,
-                               (UINT8*)gpt_header_with_entries->Entries);
-    if (EFI_ERROR(status)) {
-        Print(L"Failed to read GPT entries.\n");
-        FreePool(gpt_header_with_entries);
-        return NULL;
-    }
-
-    return gpt_header_with_entries;
+    FreePool(HandleBuffer);
+    return EFI_SUCCESS;
 }
-
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     // Initalize
@@ -164,7 +165,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_BLOCK_IO_MEDIA *block_io_media = block_io->Media;
     UINTN num_blocks = block_io_media->LastBlock + 1;
     Print(L"Block Info : Blocks : %x\n", num_blocks);
-    read_gpt_header(ImageHandle, block_io);
+    ShowPartitionEntries();
 
     while(1) __asm__ ("hlt");
 }

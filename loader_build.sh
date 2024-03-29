@@ -75,7 +75,7 @@ function run_image() {
     -drive if=ide,index=0,media=disk,format=raw,file=${IMAGE_PATH} \
     -device nec-usb-xhci,id=xhci \
     -device usb-mouse -device usb-kbd \
-    -nographic
+    -monitor stdio
 }
 
 #クリーン
@@ -109,6 +109,9 @@ do
     runonly | runonly)
         kill_proc
         run_image
+        ;;
+    build | BUILD)
+        loader_build
         ;;
     clean | trouble | CLEAN | TROUBLE)
         trouble
