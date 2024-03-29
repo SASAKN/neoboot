@@ -106,6 +106,10 @@ do
     help | HELP)
         usage
         ;;
+    runonly | runonly)
+        kill_proc
+        run_image
+        ;;
     clean | trouble | CLEAN | TROUBLE)
         trouble
         echo "削除完了"
