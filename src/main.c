@@ -81,50 +81,6 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 
     return EFI_SUCCESS;
 }
-EFI_STATUS EFIAPI ShowPartitionEntries() {
-    EFI_STATUS Status;
-    EFI_HANDLE *HandleBuffer;
-    UINTN HandleCount;
-    UINTN Index;
-
-    Status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &BlockIoProtocol, NULL, &HandleCount, &HandleBuffer);
-    if (EFI_ERROR(Status)) {
-        Print(L"Failed to locate Block IO handles\n");
-        return Status;
-    }
-
-    Print(L"Partition Entries:\n");
-    for (Index = 0; Index < HandleCount; Index++) {
-        EFI_BLOCK_IO_PROTOCOL *BlockIo;
-        EFI_BLOCK_IO_MEDIA *Media;
-        CHAR16 *PartitionName;
-
-        Status = uefi_call_wrapper(BS->HandleProtocol, 3, HandleBuffer[Index], &BlockIoProtocol, (VOID**)&BlockIo);
-        if (EFI_ERROR(Status)) {
-            Print(L"Failed to get Block IO protocol\n");
-            continue;
-        }
-
-        Media = BlockIo->Media;
-
-        // デバイスパスには、BlockIo->DeviceHandleを直接使用せず、HandleBuffer[Index]を使用します。
-        EFI_DEVICE_PATH_PROTOCOL *DevicePath;
-        Status = uefi_call_wrapper(BS->HandleProtocol, 3, HandleBuffer[Index], &DevicePathProtocol, (VOID**)&DevicePath);
-        if (EFI_ERROR(Status)) {
-            Print(L"Failed to get DevicePath protocol\n");
-            continue;
-        }
-        PartitionName = DevicePath->DevicePath;
-        if (PartitionName == NULL) {
-            PartitionName = L"Unknown";
-        }
-
-        Print(L"Partition: %s, Start LBA: %llu, End LBA: %llu\n", PartitionName, Media->MediaId, Media->LastBlock);
-    }
-
-    FreePool(HandleBuffer);
-    return EFI_SUCCESS;
-}
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     // Initalize
@@ -165,7 +121,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_BLOCK_IO_MEDIA *block_io_media = block_io->Media;
     UINTN num_blocks = block_io_media->LastBlock + 1;
     Print(L"Block Info : Blocks : %x\n", num_blocks);
-    ShowPartitionEntries();
 
     while(1) __asm__ ("hlt");
 }
