@@ -84,6 +84,7 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     // Initalize
+    EFI_STATUS status;
     InitializeLib(ImageHandle, SystemTable);
     ST = SystemTable;
     BS = SystemTable->BootServices;
@@ -119,8 +120,27 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     // Get partitions info from block devices
     EFI_BLOCK_IO_MEDIA *block_io_media = block_io->Media;
-    UINTN num_blocks = block_io_media->LastBlock + 1;
+    UINTN num_blocks = block_io_media->BlockSize;
     Print(L"Block Info : Blocks : %x\n", num_blocks);
+
+    // バッファーを作成
+    UINT8 *mbr_buffer = AllocatePool(num_blocks);
+    ASSERT(buffer != NULL);
+
+    // ブロックを読み込む
+    status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io->Media->MediaId, 0, num_blocks, mbr_buffer);
+    ASSERT(!EFI_ERROR(status));
+
+    Print(L"GPT Contents \n");
+    for (UINTN j = 0; j < num_blocks; j++) {
+        Print(L"%02x ", mbr_buffer[j]);
+        if ((j + 1) % 16 == 0 ) Print(L"\n");
+    }
+
+
+
+
+
 
     while(1) __asm__ ("hlt");
 }
