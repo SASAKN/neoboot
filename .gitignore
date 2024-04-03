@@ -7,3 +7,5 @@ efi/
 gnu-efi/
 OVMF.fd
 *.img
+*.dmg
+test.py

@@ -128,7 +128,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     ASSERT(buffer != NULL);
 
     // ブロックを読み込む
-    status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io->Media->MediaId, 0, num_blocks, mbr_buffer);
+    status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io->Media->MediaId, 1, 512, mbr_buffer);
     ASSERT(!EFI_ERROR(status));
 
     Print(L"GPT Contents \n");
