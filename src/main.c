@@ -15,6 +15,33 @@ UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...
     return num_printed;
 }
 
+// UEFI Device Path Lib Locate Protocol
+VOID *uefi_dev_path_lib_locate_protocol (EFI_GUID *p_guid) {
+    EFI_STATUS status;
+    VOID *p;
+
+    status = uefi_call_wrapper(BS->LocateProtocol, 3, p_guid, NULL, (VOID **)&p);
+    if (EFI_ERROR(status)) {
+        return NULL;
+    } else {
+        return p;
+    }
+}
+
+// Convert Device Path To Text
+EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *dev_path_lib_to_str = NULL;
+CHAR16* EFIAPI ConvertDevicePathToText(CONST EFI_DEVICE_PATH_PROTOCOL *dev_path, BOOLEAN display_only, BOOLEAN allow_shortcuts) {
+    if (dev_path_lib_to_str == NULL) {
+        dev_path_lib_to_str = uefi_dev_path_lib_locate_protocol(&gEfiDevicePathToTextProtocolGuid);
+    }
+
+    if (dev_path_lib_to_str != NULL) {
+        return uefi_call_wrapper(dev_path_lib_to_str->ConvertDevicePathToText, 3, dev_path, display_only, allow_shortcuts);
+    } else {
+        return NULL;
+    }
+}
+
 // Get memory type
 const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
 
@@ -106,40 +133,66 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     ASSERT(map.buffer != NULL);
 
     // Save memory map
-
     EFI_FILE_PROTOCOL *memmap_file = NULL;
     save_memmap(&map, memmap_file, esp_root);
 
     // Free up of memory
     FreePool(map.buffer);
 
-    // Open Block IO Protocol
+    // Get Block IO Protocol
+    EFI_HANDLE block_io_handle;
     EFI_BLOCK_IO *block_io;
     EFI_GUID block_io_guid = EFI_BLOCK_IO_PROTOCOL_GUID;
-    open_protocol(lip->DeviceHandle, &block_io_guid, (VOID **)&block_io, ImageHandle, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-
-    // Get partitions info from block devices
-    EFI_BLOCK_IO_MEDIA *block_io_media = block_io->Media;
-    UINTN num_blocks = block_io_media->BlockSize;
-    Print(L"Block Info : Blocks : %x\n", num_blocks);
-
-    // バッファーを作成
-    UINT8 *mbr_buffer = AllocatePool(num_blocks);
-    ASSERT(buffer != NULL);
-
-    // ブロックを読み込む
-    status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io->Media->MediaId, 1, 512, mbr_buffer);
+    UINTN num_handles = 0;
+    status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &block_io_guid, NULL, &num_handles, &block_io_handle);
     ASSERT(!EFI_ERROR(status));
 
-    Print(L"GPT Contents \n");
-    for (UINTN j = 0; j < num_blocks; j++) {
-        Print(L"%02x ", mbr_buffer[j]);
-        if ((j + 1) % 16 == 0 ) Print(L"\n");
+    // Process Block IO Handle
+    for (UINTN i = 0; i < num_handles; i++) {
+        status = uefi_call_wrapper(BS->HandleProtocol, 3, block_io_handle[i], &block_io_guid, (VOID **)&block_io);
+        if (!EFI_ERROR(status)) {
+            EFI_DEVICE_PATH_PROTOCOL *dev_path;
+            CHAR16 *dev_path_str;
+
+            status = uefi_call_wrapper(BS->HandleProtocol, 3, block_io_handle[i], &gEfiDevicePathProtocolGuid, (VOID **)&dev_path);
+            if (!EFI_ERROR(status)) {
+                dev_path_str = 
+            }
+        }
+
     }
 
+    // Open Block IO Protocol
+    open_protocol(lip->DeviceHandle, &block_io_guid, (VOID **)&block_io, ImageHandle, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
 
+    // Get the device info
+    EFI_BLOCK_IO_MEDIA *block_io_media = block_io->Media;
+    UINTN num_blocks = block_io_media->LastBlock + 1;
+    Print(L"Block Info : Blocks : %x\n", num_blocks);
 
+    // Allocate a buffer
+    UINT8 *mbr_buffer = AllocatePool(block_io_media->BlockSize);
+    ASSERT(mbr_buffer != NULL);
 
+    // Read blocks
+    for (UINTN i = 0; i < num_blocks; i++) {
+        status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io_media->MediaId, i, block_io_media->BlockSize, mbr_buffer);
+        ASSERT(!EFI_ERROR(status));
+
+        // Search EFI PART
+        for (UINTN j = 0; j < block_io_media->BlockSize - 6; j++) {
+            if (CompareMem(&mbr_buffer[j], EFI_PTAB_HEADER_ID, strlena(EFI_PTAB_HEADER_ID)) == 0) {
+                Print(L"Found EFI PART ! \n at block %d, offset %d \n", i, j);
+                UINT8 *gpt_buffer = AllocatePool(block_io_media->BlockSize);
+                status = uefi_call_wrapper(block_io->ReadBlocks, 5, block_io, block_io_media->MediaId, 0, block_io_media->BlockSize, gpt_buffer);
+                ASSERT(!EFI_ERROR(status));
+                for (UINTN k = 0; k < block_io_media->BlockSize; k++) {
+                    Print(L"%02x ", gpt_buffer[k]);
+                    if ((k + 1) % 16 == 0) Print(L"\n");
+                }
+            }
+        }
+    }
 
 
     while(1) __asm__ ("hlt");
