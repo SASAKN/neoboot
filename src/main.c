@@ -2,14 +2,47 @@
 #include <efilib.h>
 #include <efigpt.h>
 
-void printHex(unsigned char *data, int len) {
-    for (int i = 0; i < len; i++) {
-        Print(L"%02X ", data[i]);
-    }
-    Print(L"\n");
+#include "memory.h"
+
+// AsciiSPrint
+UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...) {
+    va_list marker;
+    UINTN num_printed;
+
+    va_start(marker, str);
+    num_printed = AsciiVSPrint(buffer, buffer_size, str, marker);
+    va_end(marker);
+    return num_printed;
 }
 
-// Function to read GPT partition entry
+// UEFI Device Path Lib Locate Protocol
+VOID *uefi_dev_path_lib_locate_protocol (EFI_GUID *p_guid) {
+    EFI_STATUS status;
+    VOID *p;
+
+    status = uefi_call_wrapper(BS->LocateProtocol, 3, p_guid, NULL, (VOID **)&p);
+    if (EFI_ERROR(status)) {
+        return NULL;
+    } else {
+        return p;
+    }
+}
+
+// Convert Device Path To Text
+EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *dev_path_lib_to_str = NULL;
+CHAR16* EFIAPI ConvertDevicePathToText(CONST EFI_DEVICE_PATH_PROTOCOL *dev_path, BOOLEAN display_only, BOOLEAN allow_shortcuts) {
+    if (dev_path_lib_to_str == NULL) {
+        dev_path_lib_to_str = uefi_dev_path_lib_locate_protocol(&gEfiDevicePathToTextProtocolGuid);
+    }
+
+    if (dev_path_lib_to_str != NULL) {
+        return uefi_call_wrapper(dev_path_lib_to_str->ConvertDevicePathToText, 3, dev_path, display_only, allow_shortcuts);
+    } else {
+        return NULL;
+    }
+}
+
+// Read GPT PARTITION ENTRY
 EFI_GUID gEfiPartTypeSystemPartitionGuid = { 0xC12A7328L, 0xF81F, 0x11D2, {0xBA, 0x4B, 0x00, 0xA0, 0xC9, 0x3E, 0xC9, 0x3B }};
 EFI_GUID gEfiPartTypeBasicDataGuid = { 0xEBD0A0A2L, 0xB9E5, 0x4433, {0x87, 0xC0, 0x68, 0xB6, 0xB7, 0x26, 0x99, 0xC7 }};
 EFI_STATUS ReadGptPartitionEntry(EFI_BLOCK_IO_PROTOCOL *BlockIo, UINT32 PartitionIndex, EFI_PARTITION_ENTRY **PartEntry) {
@@ -22,104 +55,115 @@ EFI_STATUS ReadGptPartitionEntry(EFI_BLOCK_IO_PROTOCOL *BlockIo, UINT32 Partitio
         return EFI_OUT_OF_RESOURCES;
     }
 
-    Status = uefi_call_wrapper(BlockIo->ReadBlocks, 5, BlockIo, BlockIo->Media->MediaId, 1, 512, (VOID *)*PartEntry);
+    Status = BlockIo->ReadBlocks(BlockIo, BlockIo->Media->MediaId, Lba, sizeof(EFI_PARTITION_ENTRY), (VOID *)*PartEntry);
     if (EFI_ERROR(Status)) {
-        printHex((unsigned char)**PartEntry, 512);
         FreePool(*PartEntry);
     }
 
     return Status;
 }
 
-CHAR16 *ConvertDevicePathToText(EFI_DEVICE_PATH_PROTOCOL *dev_path, BOOLEAN display_only, BOOLEAN allow_shortcuts) {
-    EFI_STATUS Status;
-    EFI_DEVICE_PATH_TO_TEXT_PROTOCOL *dev_path_lib_to_str;
+// Get memory type
+const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
 
-    // Get the handle of the DevicePathToStr protocol
-    Status = uefi_call_wrapper(BS->LocateProtocol, 3, &gEfiDevicePathToTextProtocolGuid, NULL, (VOID **)&dev_path_lib_to_str);
-    if (EFI_ERROR(Status)) {
-        Print(L"Failed to locate DevicePathToText protocol\n");
-        return L"??";
+    switch (type) {
+        case EfiReservedMemoryType: return L"EfiReservedMemoryType";
+        case EfiLoaderCode: return L"EfiLoaderCode";
+        case EfiLoaderData: return L"EfiLoaderData";
+        case EfiBootServicesCode: return L"EfiBootServicesCode";
+        case EfiBootServicesData: return L"EfiBootServicesData";
+        case EfiRuntimeServicesCode: return L"EfiRuntimeServicesCode";
+        case EfiRuntimeServicesData: return L"EfiRuntimeServicesData";
+        case EfiConventionalMemory: return L"EfiConventionalMemory";
+        case EfiUnusableMemory: return L"EfiUnusableMemory";
+        case EfiACPIReclaimMemory: return L"EfiACPIReclaimMemory";
+        case EfiACPIMemoryNVS: return L"EfiACPIMemoryNVS";
+        case EfiMemoryMappedIO: return L"EfiMemoryMappedIO";
+        case EfiMemoryMappedIOPortSpace: return L"EfiMemoryMappedIOPortSpace";
+        case EfiPalCode: return L"EfiPalCode";
+        case EfiPersistentMemory: return L"EfiPersistentMemory";
+        case EfiMaxMemoryType: return L"EfiMaxMemoryType";
+        default: return L"InvalidMemoryType";
     }
 
-    // Convert the device path to text
-    CHAR16 *dev_path_str = uefi_call_wrapper(dev_path_lib_to_str->ConvertDevicePathToText, 3, dev_path, display_only, allow_shortcuts);
-    if (dev_path_str == NULL) {
-        Print(L"Failed to convert device path to text\n");
-        return L"??";
-    }
-
-    return dev_path_str;
 }
 
-EFI_STATUS efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
-    EFI_STATUS Status;
-    EFI_BLOCK_IO_PROTOCOL *BlockIo;
-    EFI_HANDLE *HandleBuffer;
-    UINTN NumHandles;
-    EFI_GUID guid = EFI_BLOCK_IO_PROTOCOL_GUID;
+// Save memory map file
+EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp_root) {
+    char buffer[4096];
+    EFI_STATUS status;
+    UINTN size;
 
-    // Initialize the UEFI system table
+    // Header
+    CHAR8 *header = "Index, Buffer, Type, Type(name), PhysicalStart, VirtualStart, NumberOfPages, Size, Attribute\n"
+                    "-----|------------------|----|----------------------|------------------|------------------|------------------|-----|----------------|\n";
+    size = strlena(header);
+
+    // Create a file
+    status = uefi_call_wrapper(esp_root->Open, 5, esp_root, &f, L"\\memmap", EFI_FILE_MODE_READ | EFI_FILE_MODE_WRITE | EFI_FILE_MODE_CREATE, 0);
+    ASSERT(!EFI_ERROR(status));
+
+    // Write header
+    status = uefi_call_wrapper(f->Write, 3, f, &size, header);
+    ASSERT(!EFI_ERROR(status));
+
+    // Write memory map
+    for (UINTN i = 0; i < map->entry; i++) {
+        EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((char *)map->buffer + map->desc_size * i);
+        size = AsciiSPrint(buffer, sizeof(buffer), "| %02u | %016x | %02x | %20ls | %016x | %016x | %016x | %3d | %2ls %5lx | \n", i, desc, desc->Type, get_memtype(desc->Type), desc->PhysicalStart, desc->VirtualStart, desc->NumberOfPages, desc->NumberOfPages, (desc->Attribute & EFI_MEMORY_RUNTIME) ? L"RT" : L"", desc->Attribute & 0xffffflu);
+
+        status = uefi_call_wrapper(f->Write, 3, f, &size, buffer);
+        ASSERT(!EFI_ERROR(status));
+    }
+
+    // Close file handle
+    uefi_call_wrapper(f->Close, 1, f);
+
+    return EFI_SUCCESS;
+}
+
+// Open protocol
+EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI_HANDLE ImageHandle, UINT32 attr) {
+    EFI_STATUS status = uefi_call_wrapper(BS->OpenProtocol, 6, handle, guid, protocol, ImageHandle, NULL, attr);
+    ASSERT(!EFI_ERROR(status));
+
+    return EFI_SUCCESS;
+}
+
+EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+    // Initalize
+    EFI_STATUS status;
     InitializeLib(ImageHandle, SystemTable);
+    ST = SystemTable;
+    BS = SystemTable->BootServices;
+    RT = SystemTable->RuntimeServices;
 
-    // Get the block I/O protocols
-    Status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &guid, NULL, &NumHandles, &HandleBuffer);
-    if (EFI_ERROR(Status)) {
-        Print(L"Failed to locate block I/O protocol\n");
-        return Status;
-    }
+    // Open LIP
+    EFI_LOADED_IMAGE_PROTOCOL *lip = NULL;
+    EFI_GUID lip_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 
-    // Process each handle
-    for (UINTN i = 0; i < NumHandles; i++) {
-        Status = uefi_call_wrapper(BS->HandleProtocol, 3, HandleBuffer[i], &guid, (VOID **)&BlockIo);
-        if (!EFI_ERROR(Status)) {
-            EFI_DEVICE_PATH_PROTOCOL *DevicePath;
-            CHAR16 *DevicePathStr;
+    open_protocol(ImageHandle, &lip_guid, (void **)&lip, ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 
-            // Get and display the device path
-            Status = uefi_call_wrapper(BS->HandleProtocol, 3, HandleBuffer[i], &gEfiDevicePathProtocolGuid, (VOID **)&DevicePath);
-            if (!EFI_ERROR(Status)) {
-                DevicePathStr = ConvertDevicePathToText(DevicePath, TRUE, TRUE);
-                Print(L"Device: %s\n", DevicePathStr);
-                FreePool(DevicePathStr);
-            }
+    // Open ESP Root
+    EFI_FILE_HANDLE esp_root;
+    esp_root = LibOpenRoot(lip->DeviceHandle);
 
-            // Get media information from the block I/O protocol
-            EFI_BLOCK_IO_MEDIA *Media = BlockIo->Media;
+    // Get memory map
+    memmap map;
+    map.buffer = LibMemoryMap(&map.entry, &map.map_key, &map.desc_size, &map.desc_ver);
+    ASSERT(map.buffer != NULL);
 
-            // If media exists and block size is not 0
-            if (Media && Media->BlockSize != 0) {
-                // Identify partition type and display
-                EFI_PARTITION_ENTRY *PartEntry;
-                CHAR16 *PartitionTypeStr;
+    // Save memory map
+    EFI_FILE_PROTOCOL *memmap_file = NULL;
+    save_memmap(&map, memmap_file, esp_root);
 
-                // Get partition information from the EFI partition table
-                for (UINT32 j = 0; j < 1; j++) {
-                    Status = ReadGptPartitionEntry(BlockIo, j, &PartEntry);
-                    if (!EFI_ERROR(Status)) {
-                        // Identify filesystem type from partition GUID
-                        if (CompareGuid(&PartEntry->PartitionTypeGUID, &gEfiPartTypeSystemPartitionGuid)) {
-                            PartitionTypeStr = L"EFI System Partition (ESP)";
-                        } else if (CompareGuid(&PartEntry->PartitionTypeGUID, &gEfiPartTypeBasicDataGuid)) {
-                            PartitionTypeStr = L"Basic Data Partition";
-                        } else {
-                            PartitionTypeStr = L"Unknown Partition Type";
-                        }
+    // Free up of memory
+    FreePool(map.buffer);
 
-                        Print(L"  Partition %d :\nType : %s\nStart : %d\nEnd : %d\n", j, PartitionTypeStr, &PartEntry->StartingLBA, &PartEntry->EndingLBA);
-                    }
-                }
-            }
-        }
-    }
-
-    // Free memory
-    FreePool(HandleBuffer);
-
+    // All Done
     Print(L"All Done !\n");
 
     while(1) __asm__ ("hlt");
-
 
     return EFI_SUCCESS;
 }

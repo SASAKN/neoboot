@@ -8,7 +8,7 @@ BUILD_DIR=${script_dir}/build/
 IMAGE_PATH=${BUILD_DIR}/neoboot.img
 
 # ブートローダーパス
-LOADER_PATH=${script_dir}/loader.efi
+LOADER_PATH=${BUILD_DIR}/loader.efi
 
 # ボリュームの名前
 VOLUME_NAME=NEOBOOT
