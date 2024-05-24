@@ -16,7 +16,7 @@ VOLUME_NAME=NEOBOOT
 # ローダーをビルド
 function loader_build() {
     x86_64-elf-gcc -I${script_dir}/gnu-efi/inc -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c src/main.c -o ${BUILD_DIR}main.o
-    x86_64-elf-ld -shared -Bsymbolic -L${script_dir}/gnu-efi/x86_64/lib -L${script_dir}/gnu-efi/x86_64/gnuefi -T${script_dir}/gnu-efi/gnuefi/elf_x86_64_efi.lds ${script_dir}/gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o ${BUILD_DIR}main.o -o ${BUILD_DIR}main.so -lgnuefi -lefi
+    x86_64-elf-ld -z noexecstack -shared -Bsymbolic -L${script_dir}/gnu-efi/x86_64/lib -L${script_dir}/gnu-efi/x86_64/gnuefi -T${script_dir}/gnu-efi/gnuefi/elf_x86_64_efi.lds ${script_dir}/gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o ${BUILD_DIR}main.o -o ${BUILD_DIR}main.so -lgnuefi -lefi
     x86_64-elf-objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym  -j .rel -j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 ${BUILD_DIR}main.so ${LOADER_PATH}
 }
 
