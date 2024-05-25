@@ -9,3 +9,4 @@ OVMF.fd
 *.img
 *.dmg
 test.py
+*.img.cdr
