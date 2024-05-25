@@ -1,1 +1,3 @@
-src/new.c
+new/main.c
+new/func.c
+new/
