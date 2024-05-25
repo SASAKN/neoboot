@@ -36,7 +36,7 @@ CHAR16* EFIAPI ConvertDevicePathToText(CONST EFI_DEVICE_PATH_PROTOCOL *dev_path,
     }
 
     if (dev_path_lib_to_str != NULL) {
-        return uefi_call_wrapper(dev_path_lib_to_str->ConvertDevicePathToText, 3, dev_path, display_only, allow_shortcuts);
+        return (CHAR16 *)uefi_call_wrapper(dev_path_lib_to_str->ConvertDevicePathToText, 3, dev_path, display_only, allow_shortcuts);
     } else {
         return NULL;
     }
@@ -131,7 +131,7 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 }
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
-    // Initalize
+    // Initialize
     EFI_STATUS status;
     InitializeLib(ImageHandle, SystemTable);
     ST = SystemTable;
@@ -141,7 +141,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Open LIP
     EFI_LOADED_IMAGE_PROTOCOL *lip = NULL;
     EFI_GUID lip_guid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
-
     open_protocol(ImageHandle, &lip_guid, (void **)&lip, ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
 
     // Open ESP Root
@@ -157,13 +156,13 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_FILE_PROTOCOL *memmap_file = NULL;
     save_memmap(&map, memmap_file, esp_root);
 
-    // Free up of memory
+    // Free up memory
     FreePool(map.buffer);
 
     // All Done
-    Print(L"All Done !\n");
+    Print(L"All Done!\n");
 
-    while(1) __asm__ ("hlt");
+    while (1) __asm__("hlt");
 
     return EFI_SUCCESS;
 }
