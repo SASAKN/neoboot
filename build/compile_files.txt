@@ -1,2 +1,1 @@
-new/main.c
-new/func.c
+src/main.c
