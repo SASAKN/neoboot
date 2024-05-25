@@ -7,6 +7,9 @@
 #include "memory.h"
 #include "config.h"
 
+// Prototype
+UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...);
+
 // Get memory type
 const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
 
