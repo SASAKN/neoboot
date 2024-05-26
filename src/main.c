@@ -23,8 +23,8 @@
  *   -- Albert Einstein
  */
 
-#include <efi.h>
-#include <efilib.h>
+#include "efi.h"
+#include "efilib.h"
 
 #define _stringify(s) #s
 #define stringify(s) _stringify(s)
