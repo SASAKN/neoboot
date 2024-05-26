@@ -18,10 +18,8 @@ UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...
     return num_printed;
 }
 
-
 // Get memory type
 const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
-
     switch (type) {
         case EfiReservedMemoryType: return L"EfiReservedMemoryType";
         case EfiLoaderCode: return L"EfiLoaderCode";
@@ -41,7 +39,6 @@ const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
         case EfiMaxMemoryType: return L"EfiMaxMemoryType";
         default: return L"InvalidMemoryType";
     }
-
 }
 
 // Save memory map file
@@ -86,6 +83,56 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
     return EFI_SUCCESS;
 }
 
+// List disks
+void ListDisks(EFI_HANDLE ImageHandle) {
+    EFI_STATUS status;
+    EFI_HANDLE *handleBuffer;
+    UINTN handleCount;
+    EFI_GUID BlockIoProtocol = EFI_BLOCK_IO_PROTOCOL_GUID;
+    EFI_BLOCK_IO_PROTOCOL *BlockIo;
+    EFI_DISK_IO_PROTOCOL *DiskIo;
+    EFI_GUID DiskIoProtocol = EFI_DISK_IO_PROTOCOL_GUID;
+
+    // Locate all handles that support the Block I/O protocol
+    status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &BlockIoProtocol, NULL, &handleCount, &handleBuffer);
+    if (EFI_ERROR(status)) {
+        Print(L"Failed to locate handles: %r\n", status);
+        return;
+    }
+
+    // Iterate over each handle
+    for (UINTN i = 0; i < handleCount; i++) {
+        // Open Block I/O protocol
+        status = open_protocol(handleBuffer[i], &BlockIoProtocol, (void **)&BlockIo, ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+        if (EFI_ERROR(status)) {
+            Print(L"Failed to open Block I/O protocol: %r\n", status);
+            continue;
+        }
+
+        // Open Disk I/O protocol
+        status = open_protocol(handleBuffer[i], &DiskIoProtocol, (void **)&DiskIo, ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+        if (EFI_ERROR(status)) {
+            Print(L"Failed to open Disk I/O protocol: %r\n", status);
+            continue;
+        }
+
+        // Print disk information
+        Print(L"Disk %u:\n", i);
+        Print(L"  MediaId: %u\n", BlockIo->Media->MediaId);
+        Print(L"  RemovableMedia: %u\n", BlockIo->Media->RemovableMedia);
+        Print(L"  MediaPresent: %u\n", BlockIo->Media->MediaPresent);
+        Print(L"  LastBlock: %lu\n", BlockIo->Media->LastBlock);
+        Print(L"  BlockSize: %u\n", BlockIo->Media->BlockSize);
+        Print(L"  LogicalPartition: %u\n", BlockIo->Media->LogicalPartition);
+        Print(L"  ReadOnly: %u\n", BlockIo->Media->ReadOnly);
+        Print(L"  WriteCaching: %u\n", BlockIo->Media->WriteCaching);
+    }
+
+    // Free the handle buffer
+    FreePool(handleBuffer);
+}
+
+
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     // Initialize
     EFI_STATUS status;
@@ -108,6 +155,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Save memory map
     EFI_FILE_PROTOCOL *memmap_file = NULL;
     save_memmap(&map, memmap_file, esp_root);
+
+    // List GPT partitions
+    ListDisks(ImageHandle);
 
     // Free up memory
     FreePool(map.buffer);

@@ -77,8 +77,19 @@ function kill_proc() {
     done
 }
 
-# QEMUで実行する関数
-function run_image() {
+# QEMUでCUIで実行
+function run_image_cui() {
+    qemu-system-x86_64 \
+    -m 4G \
+    -drive if=pflash,format=raw,file="${BUILD_DIR}/fw/OVMF.fd" \
+    -drive if=ide,index=0,media=disk,format=raw,file="${IMAGE_PATH}" \
+    -device nec-usb-xhci,id=xhci \
+    -device usb-mouse -device usb-kbd \
+    -nographic
+}
+
+# QEMUをGUIで実行
+function run_image_gui() {
     qemu-system-x86_64 \
     -m 4G \
     -drive if=pflash,format=raw,file="${BUILD_DIR}/fw/OVMF.fd" \
@@ -91,6 +102,7 @@ function run_image() {
 # クリーン
 function trouble() {
     rm -f "${IMAGE_PATH}" "${IMAGE_PATH}.dmg"
+    rm -f "${BUILD_DIR}/*.o" "${BUILD_DIR}/*.so" "${BUILD_DIR}/*.efi" "${BUILD_DIR}/*.img"
 }
 
 # 使い方
@@ -106,10 +118,17 @@ function usage() {
 while (( $# > 0 )); do
   case $1 in
     run | RUN)
+      
       loader_build
       make_image
       kill_proc
-      run_image
+
+      # CUIかGUIか
+      if [ "$2" = "gui" ]; then
+        run_image_gui
+      else 
+        run_image_cui
+      fi
       ;;
     help | HELP)
       usage
@@ -117,6 +136,14 @@ while (( $# > 0 )); do
     runonly | runonly)
       kill_proc
       run_image
+
+      # CUIかGUIか
+      if [ "$2" = "gui" ]; then
+        run_image_gui
+      else 
+        run_image_cui
+      fi
+      
       ;;
     build | BUILD)
       loader_build
@@ -124,9 +151,6 @@ while (( $# > 0 )); do
     clean | trouble | CLEAN | TROUBLE)
       trouble
       echo "削除完了"
-      ;;
-    *)
-      usage
       ;;
   esac
   shift
