@@ -143,7 +143,7 @@ while (( $# > 0 )); do
       else 
         run_image_cui
       fi
-      
+
       ;;
     build | BUILD)
       loader_build
@@ -152,6 +152,9 @@ while (( $# > 0 )); do
       trouble
       echo "削除完了"
       ;;
+    *)
+      echo "終了"
+    ;;
   esac
   shift
 done

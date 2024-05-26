@@ -83,7 +83,6 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
     return EFI_SUCCESS;
 }
 
-// List disks
 void ListDisks(EFI_HANDLE ImageHandle) {
     EFI_STATUS status;
     EFI_HANDLE *handleBuffer;
@@ -126,6 +125,56 @@ void ListDisks(EFI_HANDLE ImageHandle) {
         Print(L"  LogicalPartition: %u\n", BlockIo->Media->LogicalPartition);
         Print(L"  ReadOnly: %u\n", BlockIo->Media->ReadOnly);
         Print(L"  WriteCaching: %u\n", BlockIo->Media->WriteCaching);
+
+        if (!BlockIo->Media->MediaPresent) {
+            Print(L"  No media present.\n");
+            continue;
+        }
+
+        // Read GPT header
+        CHAR8 headerBuffer[512];
+        EFI_PARTITION_TABLE_HEADER *GptHeader;
+        status = uefi_call_wrapper(DiskIo->ReadDisk, 5, DiskIo, BlockIo->Media->MediaId, 1 * BlockIo->Media->BlockSize, sizeof(headerBuffer), headerBuffer);
+        if (EFI_ERROR(status)) {
+            Print(L"  Failed to read GPT header: %r\n", status);
+            continue;
+        }
+
+        GptHeader = (EFI_PARTITION_TABLE_HEADER *)headerBuffer;
+
+        // Validate GPT header
+        if (!strncmpa(headerBuffer, EFI_PTAB_HEADER_ID, 8) == 0) {
+            Print(L"GPT Header is Not Found \n");
+            continue;
+        }
+        
+        Print(L"  GPT Header found:\n");
+        Print(L"    Signature :%u", GptHeader->Header.Signature);
+        Print(L"    Revision: %u.%u\n", GptHeader->Header.Revision >> 16, GptHeader->Header.Revision & 0xFFFF);
+        Print(L"    HeaderSize: %u\n", GptHeader->Header.HeaderSize);
+        Print(L"    MyLBA: %lu\n", GptHeader->MyLBA);
+        Print(L"    AlternateLBA: %lu\n", GptHeader->AlternateLBA);
+        Print(L"    FirstUsableLBA: %lu\n", GptHeader->FirstUsableLBA);
+        Print(L"    LastUsableLBA: %lu\n", GptHeader->LastUsableLBA);
+        Print(L"    NumberOfPartitionEntries: %u\n", GptHeader->NumberOfPartitionEntries);
+
+        // Read partition entries
+        UINT8 partitionBuffer[BlockIo->Media->BlockSize];
+        for (UINTN j = 0; j < GptHeader->NumberOfPartitionEntries; j++) {
+            status = uefi_call_wrapper(DiskIo->ReadDisk, 5, DiskIo, BlockIo->Media->MediaId, GptHeader->PartitionEntryLBA * BlockIo->Media->BlockSize + j * sizeof(EFI_PARTITION_ENTRY), sizeof(partitionBuffer), partitionBuffer);
+            if (EFI_ERROR(status)) {
+                Print(L"    Failed to read partition entry: %r\n", status);
+                continue;
+            }
+
+            EFI_PARTITION_ENTRY *PartitionEntry = (EFI_PARTITION_ENTRY *)partitionBuffer;
+            if (PartitionEntry->PartitionTypeGUID.Data1 != 0 || PartitionEntry->PartitionTypeGUID.Data2 != 0 || PartitionEntry->PartitionTypeGUID.Data3 != 0 || PartitionEntry->PartitionTypeGUID.Data4[0] != 0) {
+                Print(L"    Partition %u:\n", j);
+                Print(L"      StartingLBA: %lu\n", PartitionEntry->StartingLBA);
+                Print(L"      EndingLBA: %lu\n", PartitionEntry->EndingLBA);
+                Print(L"      PartitionName: %s\n", PartitionEntry->PartitionName);
+            }
+        }
     }
 
     // Free the handle buffer
