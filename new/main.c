@@ -6,6 +6,8 @@
 // NEOBOOT
 #include "memory.h"
 #include "config.h"
+#include "disks.h"
+
 
 // AsciiSPrint
 UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...) {
@@ -83,6 +85,21 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
     return EFI_SUCCESS;
 }
 
+// Control Timer
+UINTN control_timer(BOOLEAN mode, EFI_TIME *time) {
+    // 今の時間を取得
+    uefi_call_wrapper(RT->GetTime, 2, time, NULL);
+
+    // 終了ならば
+    if (mode == 1) {
+        
+    }
+
+
+}
+
+
+// List Disks
 void ListDisks(EFI_HANDLE ImageHandle) {
     EFI_STATUS status;
     EFI_HANDLE *handleBuffer;
@@ -147,9 +164,9 @@ void ListDisks(EFI_HANDLE ImageHandle) {
             Print(L"GPT Header is Not Found \n");
             continue;
         }
-        
+
         Print(L"  GPT Header found:\n");
-        Print(L"    Signature :%u", GptHeader->Header.Signature);
+        Print(L"    Signature :%u\n", GptHeader->Header.Signature);
         Print(L"    Revision: %u.%u\n", GptHeader->Header.Revision >> 16, GptHeader->Header.Revision & 0xFFFF);
         Print(L"    HeaderSize: %u\n", GptHeader->Header.HeaderSize);
         Print(L"    MyLBA: %lu\n", GptHeader->MyLBA);
@@ -172,11 +189,22 @@ void ListDisks(EFI_HANDLE ImageHandle) {
                 Print(L"    Partition %u:\n", j);
                 Print(L"      StartingLBA: %lu\n", PartitionEntry->StartingLBA);
                 Print(L"      EndingLBA: %lu\n", PartitionEntry->EndingLBA);
+                Print(L"      Partition Type GUID: {%x-%x-%x-%x%x%x-%x%x%x%x%x}\n",
+                        PartitionEntry->PartitionTypeGUID.Data1,
+                        PartitionEntry->PartitionTypeGUID.Data2,
+                        PartitionEntry->PartitionTypeGUID.Data3,
+                        PartitionEntry->PartitionTypeGUID.Data4[0],
+                        PartitionEntry->PartitionTypeGUID.Data4[1],
+                        PartitionEntry->PartitionTypeGUID.Data4[2],
+                        PartitionEntry->PartitionTypeGUID.Data4[3],
+                        PartitionEntry->PartitionTypeGUID.Data4[4],
+                        PartitionEntry->PartitionTypeGUID.Data4[5],
+                        PartitionEntry->PartitionTypeGUID.Data4[6],
+                        PartitionEntry->PartitionTypeGUID.Data4[7]);
                 Print(L"      PartitionName: %s\n", PartitionEntry->PartitionName);
             }
         }
     }
-
     // Free the handle buffer
     FreePool(handleBuffer);
 }
@@ -186,6 +214,12 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Initialize
     EFI_STATUS status;
     InitializeLib(ImageHandle, SystemTable);
+
+    // Start timer
+    EFI_TIME start_time;
+    EFI_TIME end_time;
+    uefi_call_wrapper(RT->GetTime, 2, &start_time, NULL);
+    Print(L"Start Time: %d:%d:%d\n", start_time.Hour, start_time.Minute, start_time.Second);
 
     // Open LIP
     EFI_LOADED_IMAGE_PROTOCOL *lip = NULL;
@@ -205,11 +239,21 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_FILE_PROTOCOL *memmap_file = NULL;
     save_memmap(&map, memmap_file, esp_root);
 
-    // List GPT partitions
-    ListDisks(ImageHandle);
-
     // Free up memory
     FreePool(map.buffer);
+
+    // End timer
+    uefi_call_wrapper(RT->GetTime, 2, &end_time, NULL);
+    UINTN end_time_second = 0;
+
+    // 分が違う場合
+    end_time_second += (end_time.Minute - start_time.Minute) * 60;
+
+    // 秒を追加
+    end_time_second += end_time.Second;
+    
+    // Print it
+    Print(L"Boot Time: %us \n", end_time_second);
 
     // All Done
     Print(L"All Done!\n");
