@@ -86,16 +86,25 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 }
 
 // Control Timer
-UINTN control_timer(BOOLEAN mode, EFI_TIME *time) {
-    // 今の時間を取得
-    uefi_call_wrapper(RT->GetTime, 2, time, NULL);
+UINTN control_timer(BOOLEAN mode, EFI_TIME *start_time) {
+    // 開始
+    if (mode == 0) {
+        uefi_call_wrapper(RT->GetTime, 2, start_time, NULL);
+        return 0;
+    } else if (mode == 1) {
+        // 終了
+        EFI_TIME *end;
+        uefi_call_wrapper(RT->GetTime, 2, end, NULL);
 
-    // 終了ならば
-    if (mode == 1) {
+        // 分から秒
+        UINTN second;
+        second += (end->Minute - start_time->Minute) * 60;
         
+        // 秒
+        second += end->Second - start_time->Second;
+
+        return second;
     }
-
-
 }
 
 
@@ -216,10 +225,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     InitializeLib(ImageHandle, SystemTable);
 
     // Start timer
-    EFI_TIME start_time;
-    EFI_TIME end_time;
-    uefi_call_wrapper(RT->GetTime, 2, &start_time, NULL);
-    Print(L"Start Time: %d:%d:%d\n", start_time.Hour, start_time.Minute, start_time.Second);
+    EFI_TIME *start_time;
+    control_timer(0, start_time);
 
     // Open LIP
     EFI_LOADED_IMAGE_PROTOCOL *lip = NULL;
@@ -243,17 +250,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     FreePool(map.buffer);
 
     // End timer
-    uefi_call_wrapper(RT->GetTime, 2, &end_time, NULL);
-    UINTN end_time_second = 0;
+    UINTN boot_time = control_timer(1, start_time);
 
-    // 分が違う場合
-    end_time_second += (end_time.Minute - start_time.Minute) * 60;
-
-    // 秒を追加
-    end_time_second += end_time.Second;
-    
-    // Print it
-    Print(L"Boot Time: %us \n", end_time_second);
+    Print(L"Boot Time : %us\n", boot_time);
 
     // All Done
     Print(L"All Done!\n");
