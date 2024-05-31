@@ -83,18 +83,8 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
     return EFI_SUCCESS;
 }
 
-// new
-
-struct disk_info{
-    EFI_BLOCK_IO_MEDIA Media;
-    EFI_PARTITION_TABLE_HEADER gpt_header;
-    UINTN no_of_partition;
-    EFI_PARTITION_ENTRY *partition_entries;
-};
-
-struct disk_info *disk_info[];
-
-void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
+// new 
+void ListDisks(EFI_HANDLE ImageHandle) {
     EFI_STATUS status;
     EFI_HANDLE *handleBuffer;
     UINTN handleCount;
@@ -102,7 +92,7 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
     EFI_BLOCK_IO_PROTOCOL *BlockIo;
     EFI_DISK_IO_PROTOCOL *DiskIo;
     EFI_GUID DiskIoProtocol = EFI_DISK_IO_PROTOCOL_GUID;
-    
+
     // Locate all handles that support the Block I/O protocol
     status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &BlockIoProtocol, NULL, &handleCount, &handleBuffer);
     if (EFI_ERROR(status)) {
@@ -137,9 +127,6 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
         Print(L"  ReadOnly: %u\n", BlockIo->Media->ReadOnly);
         Print(L"  WriteCaching: %u\n", BlockIo->Media->WriteCaching);
 
-        // Set the struct
-        disk_info->Media = *(BlockIo->Media);
-
         if (!BlockIo->Media->MediaPresent) {
             Print(L"  No media present.\n");
             continue;
@@ -154,18 +141,13 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
             continue;
         }
 
+        GptHeader = (EFI_PARTITION_TABLE_HEADER *)headerBuffer;
+
         // Validate GPT header
         if (!strncmpa(headerBuffer, EFI_PTAB_HEADER_ID, 8) == 0) {
             Print(L"GPT Header is Not Found \n");
             continue;
         }
-
-        // Put struct into gpt_header
-        GptHeader = (EFI_PARTITION_TABLE_HEADER *)headerBuffer;
-
-        // Set disk_info struct
-        disk_info->gpt_header = *GptHeader;
-        disk_info->no_of_partition = GptHeader->NumberOfPartitionEntries;
         
         Print(L"  GPT Header found:\n");
         Print(L"    Signature :%u", GptHeader->Header.Signature);
@@ -192,9 +174,6 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
                 Print(L"      StartingLBA: %lu\n", PartitionEntry->StartingLBA);
                 Print(L"      EndingLBA: %lu\n", PartitionEntry->EndingLBA);
                 Print(L"      PartitionName: %s\n", PartitionEntry->PartitionName);
-
-                // Set disk_info struct
-                disk_info->partition_entries = PartitionEntry;
             }
         }
     }
@@ -332,10 +311,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     save_memmap(&map, memmap_file, esp_root);
 
     // List GPT partitions
-    struct disk_info *disk_info;
-    ListDisks_new(ImageHandle, disk_info);
-
-    Print(L"LBA %u\n", disk_info[1].gpt_header.MyLBA);
+    ListDisks(ImageHandle);
 
     // Free up memory
     FreePool(map.buffer);
