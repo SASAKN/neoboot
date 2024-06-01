@@ -84,7 +84,8 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
     return EFI_SUCCESS;
 }
 
-void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_of_disk) {
+// 構造体で返すようにした関数
+void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_of_disks) {
     EFI_STATUS status;
     EFI_HANDLE *handleBuffer;
     UINTN handleCount;
@@ -103,13 +104,13 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *
     // Allocate the disk_info struct in the memory
     *disk_info = AllocatePool(handleCount * sizeof(struct disk_info));
     if (*disk_info == NULL) {
-        Print(L"Failed to Allocate the Memory\n");
+        Print(L"Failed to allocate memory\n");
         FreePool(handleBuffer);
         return;
     }
 
-    // Put no_of_disk into handle Count
-    *no_of_disk = handleCount;
+    // Put handle Count into no_of_disks
+    *no_of_disks = handleCount;
 
     // Iterate over each handle
     for (UINTN i = 0; i < handleCount; i++) {
@@ -157,7 +158,7 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *
         }
 
         // Validate GPT header
-        if (strncmpa(headerBuffer, EFI_PTAB_HEADER_ID, sizeof(EFI_PTAB_HEADER_ID) - 1) != 0) {
+        if (!strncmpa(headerBuffer, EFI_PTAB_HEADER_ID, 8) == 0) {
             Print(L"GPT Header is Not Found \n");
             continue;
         }
@@ -166,10 +167,10 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *
         GptHeader = (EFI_PARTITION_TABLE_HEADER *)headerBuffer;
 
         // Put GptHeader into disk_info
-        (*disk_info)[i].gpt_header = *(GptHeader);
-
+        (*disk_info)[i].gpt_header = *GptHeader;
+        
         Print(L"  GPT Header found:\n");
-        Print(L"    Signature: %lx\n", GptHeader->Header.Signature);
+        Print(L"    Signature :%u", GptHeader->Header.Signature);
         Print(L"    Revision: %u.%u\n", GptHeader->Header.Revision >> 16, GptHeader->Header.Revision & 0xFFFF);
         Print(L"    HeaderSize: %u\n", GptHeader->Header.HeaderSize);
         Print(L"    MyLBA: %lu\n", GptHeader->MyLBA);
@@ -178,14 +179,13 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *
         Print(L"    LastUsableLBA: %lu\n", GptHeader->LastUsableLBA);
         Print(L"    NumberOfPartitionEntries: %u\n", GptHeader->NumberOfPartitionEntries);
 
-        // Allocate the memory to store partition info
+        // Read partition entries
+        UINT8 partitionBuffer[BlockIo->Media->BlockSize];
+        
+        // Allocate partition_entries structure
         (*disk_info)[i].partition_entries = AllocatePool(GptHeader->NumberOfPartitionEntries * sizeof(EFI_PARTITION_ENTRY));
 
-        // Store the Number of partition
-        (*disk_info)[i].no_of_partition = GptHeader->NumberOfPartitionEntries;
 
-        // Read partition entries
-        UINT8 partitionBuffer[sizeof(EFI_PARTITION_ENTRY)];
         for (UINTN j = 0; j < GptHeader->NumberOfPartitionEntries; j++) {
             status = uefi_call_wrapper(DiskIo->ReadDisk, 5, DiskIo, BlockIo->Media->MediaId, GptHeader->PartitionEntryLBA * BlockIo->Media->BlockSize + j * sizeof(EFI_PARTITION_ENTRY), sizeof(partitionBuffer), partitionBuffer);
             if (EFI_ERROR(status)) {
@@ -207,106 +207,6 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *
     // Free the handle buffer
     FreePool(handleBuffer);
 }
-
-
-void ListDisks(EFI_HANDLE ImageHandle) {
-    EFI_STATUS status;
-    EFI_HANDLE *handleBuffer;
-    UINTN handleCount;
-    EFI_GUID BlockIoProtocol = EFI_BLOCK_IO_PROTOCOL_GUID;
-    EFI_BLOCK_IO_PROTOCOL *BlockIo;
-    EFI_DISK_IO_PROTOCOL *DiskIo;
-    EFI_GUID DiskIoProtocol = EFI_DISK_IO_PROTOCOL_GUID;
-
-    // Locate all handles that support the Block I/O protocol
-    status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &BlockIoProtocol, NULL, &handleCount, &handleBuffer);
-    if (EFI_ERROR(status)) {
-        Print(L"Failed to locate handles: %r\n", status);
-        return;
-    }
-
-    // Iterate over each handle
-    for (UINTN i = 0; i < handleCount; i++) {
-        // Open Block I/O protocol
-        status = open_protocol(handleBuffer[i], &BlockIoProtocol, (void **)&BlockIo, ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-        if (EFI_ERROR(status)) {
-            Print(L"Failed to open Block I/O protocol: %r\n", status);
-            continue;
-        }
-
-        // Open Disk I/O protocol
-        status = open_protocol(handleBuffer[i], &DiskIoProtocol, (void **)&DiskIo, ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-        if (EFI_ERROR(status)) {
-            Print(L"Failed to open Disk I/O protocol: %r\n", status);
-            continue;
-        }
-
-        // Print disk information
-        Print(L"Disk %u:\n", i);
-        Print(L"  MediaId: %u\n", BlockIo->Media->MediaId);
-        Print(L"  RemovableMedia: %u\n", BlockIo->Media->RemovableMedia);
-        Print(L"  MediaPresent: %u\n", BlockIo->Media->MediaPresent);
-        Print(L"  LastBlock: %lu\n", BlockIo->Media->LastBlock);
-        Print(L"  BlockSize: %u\n", BlockIo->Media->BlockSize);
-        Print(L"  LogicalPartition: %u\n", BlockIo->Media->LogicalPartition);
-        Print(L"  ReadOnly: %u\n", BlockIo->Media->ReadOnly);
-        Print(L"  WriteCaching: %u\n", BlockIo->Media->WriteCaching);
-
-        if (!BlockIo->Media->MediaPresent) {
-            Print(L"  No media present.\n");
-            continue;
-        }
-
-        // Read GPT header
-        CHAR8 headerBuffer[512];
-        EFI_PARTITION_TABLE_HEADER *GptHeader;
-        status = uefi_call_wrapper(DiskIo->ReadDisk, 5, DiskIo, BlockIo->Media->MediaId, 1 * BlockIo->Media->BlockSize, sizeof(headerBuffer), headerBuffer);
-        if (EFI_ERROR(status)) {
-            Print(L"  Failed to read GPT header: %r\n", status);
-            continue;
-        }
-
-        GptHeader = (EFI_PARTITION_TABLE_HEADER *)headerBuffer;
-
-        // Validate GPT header
-        if (!strncmpa(headerBuffer, EFI_PTAB_HEADER_ID, 8) == 0) {
-            Print(L"  GPT Header is Not Found \n");
-            continue;
-        }
-        
-        Print(L"  GPT Header found:\n");
-        Print(L"    Signature :%u", GptHeader->Header.Signature);
-        Print(L"    Revision: %u.%u\n", GptHeader->Header.Revision >> 16, GptHeader->Header.Revision & 0xFFFF);
-        Print(L"    HeaderSize: %u\n", GptHeader->Header.HeaderSize);
-        Print(L"    MyLBA: %lu\n", GptHeader->MyLBA);
-        Print(L"    AlternateLBA: %lu\n", GptHeader->AlternateLBA);
-        Print(L"    FirstUsableLBA: %lu\n", GptHeader->FirstUsableLBA);
-        Print(L"    LastUsableLBA: %lu\n", GptHeader->LastUsableLBA);
-        Print(L"    NumberOfPartitionEntries: %u\n", GptHeader->NumberOfPartitionEntries);
-
-        // Read partition entries
-        UINT8 partitionBuffer[BlockIo->Media->BlockSize];
-        for (UINTN j = 0; j < GptHeader->NumberOfPartitionEntries; j++) {
-            status = uefi_call_wrapper(DiskIo->ReadDisk, 5, DiskIo, BlockIo->Media->MediaId, GptHeader->PartitionEntryLBA * BlockIo->Media->BlockSize + j * sizeof(EFI_PARTITION_ENTRY), sizeof(partitionBuffer), partitionBuffer);
-            if (EFI_ERROR(status)) {
-                Print(L"    Failed to read partition entry: %r\n", status);
-                continue;
-            }
-
-            EFI_PARTITION_ENTRY *PartitionEntry = (EFI_PARTITION_ENTRY *)partitionBuffer;
-            if (PartitionEntry->PartitionTypeGUID.Data1 != 0 || PartitionEntry->PartitionTypeGUID.Data2 != 0 || PartitionEntry->PartitionTypeGUID.Data3 != 0 || PartitionEntry->PartitionTypeGUID.Data4[0] != 0) {
-                Print(L"    Partition %u:\n", j);
-                Print(L"      StartingLBA: %lu\n", PartitionEntry->StartingLBA);
-                Print(L"      EndingLBA: %lu\n", PartitionEntry->EndingLBA);
-                Print(L"      PartitionName: %s\n", PartitionEntry->PartitionName);
-            }
-        }
-    }
-
-    // Free the handle buffer
-    FreePool(handleBuffer);
-}
-
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     // Initialize
