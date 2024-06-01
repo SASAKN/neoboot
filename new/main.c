@@ -142,6 +142,7 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *
         // Check the media
         if (!BlockIo->Media->MediaPresent) {
             Print(L"  No media present.\n");
+            (*disk_info)[i].gpt_found = 0;
             continue;
         }
 
@@ -160,6 +161,7 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *
         // Validate GPT header
         if (!strncmpa(headerBuffer, EFI_PTAB_HEADER_ID, 8) == 0) {
             Print(L"GPT Header is Not Found \n");
+            (*disk_info)[i].gpt_found = 0;
             continue;
         }
 
@@ -167,6 +169,7 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *
         GptHeader = (EFI_PARTITION_TABLE_HEADER *)headerBuffer;
 
         // Put GptHeader into disk_info
+        (*disk_info)[i].gpt_found = 1;
         (*disk_info)[i].gpt_header = *GptHeader;
         
         Print(L"  GPT Header found:\n");
@@ -248,8 +251,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     UINTN no_of_disks;
     ListDisks_new(ImageHandle, &disk_info, &no_of_disks);
     for (UINTN i = 0; i < no_of_disks; i++) {
-        if (disk_info[i].gpt_header.Header.Revision != 0) {
-            Print(L"DISK%u\nNumber Of Partition Entries : %u\n", i, disk_info[i].gpt_header.NumberOfPartitionEntries);
+        if (disk_info[i].gpt_found != 0) {
+            Print(L"DISK%u\nPartitionName : %-ls\n", i, disk_info[i].partition_entries[0].PartitionName);
         }
     }
 
