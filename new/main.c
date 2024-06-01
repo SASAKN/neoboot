@@ -85,7 +85,7 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 }
 
 // new
-void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
+void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info, UINTN *no_of_disk) {
     EFI_STATUS status;
     EFI_HANDLE *handleBuffer;
     UINTN handleCount;
@@ -107,6 +107,9 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
         Print(L"Failed to Allocate the Memory\n");
         return;
     }
+
+    // Put no_of_disk into handle Count
+    *no_of_disk = handleCount;
 
     // Iterate over each handle
     for (UINTN i = 0; i < handleCount; i++) {
@@ -339,7 +342,11 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     // List GPT partitions
     struct disk_info *disk_info;
-    ListDisks_new(ImageHandle, disk_info);
+    UINTN no_of_disks;
+    ListDisks_new(ImageHandle, disk_info, &no_of_disks);
+    for (UINTN i = 0; i < no_of_disks; i++) {
+        Print(L"[TEST]\nDisk %u\nNumber Of Partition : %u", i, disk_info[i].no_of_partition);
+    }
 
     // Free up memory
     FreePool(map.buffer);
