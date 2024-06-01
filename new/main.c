@@ -185,6 +185,9 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *
         // Allocate partition_entries structure
         (*disk_info)[i].partition_entries = AllocatePool(GptHeader->NumberOfPartitionEntries * sizeof(EFI_PARTITION_ENTRY));
 
+        // Get the number of partition
+        (*disk_info)[i].no_of_partition = GptHeader->NumberOfPartitionEntries;
+
 
         for (UINTN j = 0; j < GptHeader->NumberOfPartitionEntries; j++) {
             status = uefi_call_wrapper(DiskIo->ReadDisk, 5, DiskIo, BlockIo->Media->MediaId, GptHeader->PartitionEntryLBA * BlockIo->Media->BlockSize + j * sizeof(EFI_PARTITION_ENTRY), sizeof(partitionBuffer), partitionBuffer);
@@ -245,7 +248,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     UINTN no_of_disks;
     ListDisks_new(ImageHandle, &disk_info, &no_of_disks);
     for (UINTN i = 0; i < no_of_disks; i++) {
-        Print(L"[TEST]\nDisk %u\nRemoveable Media : %u", i, disk_info[i].gpt_header);
+        if (disk_info[i].gpt_header.Header.Revision != 0) {
+            Print(L"DISK%u\nNumber Of Partition Entries : %u\n", i, disk_info[i].gpt_header.NumberOfPartitionEntries);
+        }
     }
 
     // Free up memory
