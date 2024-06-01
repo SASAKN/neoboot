@@ -16,7 +16,9 @@ LOADER_PATH="${BUILD_DIR}/loader.efi"
 VOLUME_NAME="NEOBOOT"
 
 # コンパイル対象のファイル名を読み込む
-COMPILE_FILES=$(<${BUILD_DIR}/compile_files.txt)
+COMPILE_FILES=($(<${BUILD_DIR}/compile_files.txt))
+
+cat $COMPILE_FILES
 
 # ローダーをビルド
 function loader_build() {
