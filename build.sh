@@ -18,8 +18,6 @@ VOLUME_NAME="NEOBOOT"
 # コンパイル対象のファイル名を読み込む
 COMPILE_FILES=($(<${BUILD_DIR}/compile_files.txt))
 
-cat $COMPILE_FILES
-
 # ローダーをビルド
 function loader_build() {
     mkdir -p "${BUILD_DIR}"
@@ -104,7 +102,7 @@ function run_image_gui() {
 # クリーン
 function trouble() {
     rm -f "${IMAGE_PATH}" "${IMAGE_PATH}.dmg"
-    rm -f "${BUILD_DIR}/*.o" "${BUILD_DIR}/*.so" "${BUILD_DIR}/*.efi" "${BUILD_DIR}/*.img"
+    rm -f ${BUILD_DIR}/*.o ${BUILD_DIR}/*.so ${BUILD_DIR}/*.efi
 }
 
 # 使い方
