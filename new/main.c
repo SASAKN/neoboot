@@ -101,8 +101,16 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
         return;
     }
 
+    // Allocate the disk_info struct in the memory
+    disk_info = AllocatePool(handleCount * sizeof(struct disk_info));
+    if (disk_info == NULL) {
+        Print(L"Failed to Allocate the Memory\n");
+        return;
+    }
+
     // Iterate over each handle
     for (UINTN i = 0; i < handleCount; i++) {
+
         // Open Block I/O protocol
         status = open_protocol(handleBuffer[i], &BlockIoProtocol, (void **)&BlockIo, ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
         if (EFI_ERROR(status)) {
@@ -128,10 +136,14 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
         Print(L"  ReadOnly: %u\n", BlockIo->Media->ReadOnly);
         Print(L"  WriteCaching: %u\n", BlockIo->Media->WriteCaching);
 
+        // Check the media
         if (!BlockIo->Media->MediaPresent) {
             Print(L"  No media present.\n");
             continue;
         }
+
+        // Put Media into disk_info
+        disk_info[i].Media = *(BlockIo->Media);
 
         // Read GPT header
         CHAR8 headerBuffer[512];
@@ -150,6 +162,9 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
 
         // Put struct into gpt_header
         GptHeader = (EFI_PARTITION_TABLE_HEADER *)headerBuffer;
+
+        // Put GptHeader into disk_info
+        disk_info[i].gpt_header = *(GptHeader);
         
         Print(L"  GPT Header found:\n");
         Print(L"    Signature :%u", GptHeader->Header.Signature);
@@ -160,6 +175,12 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
         Print(L"    FirstUsableLBA: %lu\n", GptHeader->FirstUsableLBA);
         Print(L"    LastUsableLBA: %lu\n", GptHeader->LastUsableLBA);
         Print(L"    NumberOfPartitionEntries: %u\n", GptHeader->NumberOfPartitionEntries);
+
+        // Allocate the memory to store partition info
+        disk_info[i].partition_entries = AllocatePool(GptHeader->NumberOfPartitionEntries * sizeof(EFI_PARTITION_ENTRY));
+
+        // Store the Number of partition
+        disk_info[i].no_of_partition = GptHeader->NumberOfPartitionEntries;
 
         // Read partition entries
         UINT8 partitionBuffer[BlockIo->Media->BlockSize];
@@ -176,6 +197,7 @@ void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
                 Print(L"      StartingLBA: %lu\n", PartitionEntry->StartingLBA);
                 Print(L"      EndingLBA: %lu\n", PartitionEntry->EndingLBA);
                 Print(L"      PartitionName: %s\n", PartitionEntry->PartitionName);
+                disk_info[i].partition_entries[j] = *(PartitionEntry);
             }
         }
     }
