@@ -307,6 +307,9 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_STATUS status;
     InitializeLib(ImageHandle, SystemTable);
 
+    // Unlock the watch dog timer
+    uefi_call_wrapper(BS->SetWatchdogTimer, 4, 0, 0, 0, NULL);
+
     // Start timer
     EFI_TIME start_time;
     EFI_TIME end_time;

@@ -1,4 +1,3 @@
 # 明日のこと
 明日は、struct disk_info disk_infoの部分を配列に変更して、ポインターでパスするように変更したい
 struct disk_info *disk_info[]のように宣言できるといいかも
-あと、ヲッチドックタイマーも無効にするといいかも
