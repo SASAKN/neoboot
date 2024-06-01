@@ -5,6 +5,7 @@
 
 // NEOBOOT
 #include "memory.h"
+#include "disk.h"
 #include "config.h"
 
 // AsciiSPrint
@@ -84,16 +85,6 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 }
 
 // new
-
-struct disk_info{
-    EFI_BLOCK_IO_MEDIA Media;
-    EFI_PARTITION_TABLE_HEADER gpt_header;
-    UINTN no_of_partition;
-    EFI_PARTITION_ENTRY *partition_entries;
-};
-
-struct disk_info *disk_info[];
-
 void ListDisks_new(EFI_HANDLE ImageHandle, struct disk_info *disk_info) {
     EFI_STATUS status;
     EFI_HANDLE *handleBuffer;
