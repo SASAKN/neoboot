@@ -18,19 +18,23 @@ VOLUME_NAME="NEOBOOT"
 # コンパイル対象のファイル名を読み込む
 COMPILE_FILES=($(<${BUILD_DIR}/compile_files.txt))
 
+# 統合ファイルのパス
+MERGED_FILE="${BUILD_DIR}/code/neoboot.c"
+
 # ローダーをビルド
 function loader_build() {
-    mkdir -p "${BUILD_DIR}"
-    obj_files=()
-    
-    for file in ${COMPILE_FILES}; do
-        obj_file="${BUILD_DIR}/$(basename "${file}" .c).o"
-        
-        # 各ファイルをコンパイル
-        x86_64-elf-gcc -I"${script_dir}/gnu-efi/inc" -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c "${file}" -o "${obj_file}"
-        
-        obj_files+=("${obj_file}")
-    done
+
+    # ビルドディレクトリーを作成
+    mkdir -p "${BUILD_DIR}/code"
+
+    # Cファイルを全て統合
+    cat "${COMPILE_FILES[@]}" > "${MERGED_FILE}"
+
+    # ヘッダーファイルをコピー
+    cp ${script_dir}/src/*.h "${BUILD_DIR}/code/"
+
+    # 統合ファイルをコンパイル
+    x86_64-elf-gcc -I"${script_dir}/gnu-efi/inc" -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c "${MERGED_FILE}" -o "${BUILD_DIR}/merged.o"
 
     # オブジェクトファイルをリンク
     x86_64-elf-ld -z noexecstack -shared -Bsymbolic -L"${script_dir}/gnu-efi/x86_64/lib" -L"${script_dir}/gnu-efi/x86_64/gnuefi" -T"${script_dir}/gnu-efi/gnuefi/elf_x86_64_efi.lds" "${script_dir}/gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o" "${obj_files[@]}" -o "${BUILD_DIR}/main.so" -lgnuefi -lefi
