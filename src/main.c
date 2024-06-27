@@ -250,11 +250,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     struct disk_info *disk_info;
     UINTN no_of_disks;
     ListDisks_new(ImageHandle, &disk_info, &no_of_disks);
-    for (UINTN i = 0; i < no_of_disks; i++) {
-        if (disk_info[i].gpt_found != 0) {
-            Print(L"DISK%u\nPartitionName : %-ls\n", i, disk_info[i].partition_entries[0].PartitionName);
-        }
-    }
 
     // Free up memory
     FreePool(map.buffer);
@@ -267,7 +262,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     end_time_second += (end_time.Minute - start_time.Minute) * 60;
 
     // 秒を追加
-    end_time_second += (end_time.Second - start_time.Second);
+    end_time_second += end_time.Second - start_time.Second;
 
     // Print
     Print(L"Boot Time: %us \n", end_time_second);
