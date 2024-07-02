@@ -128,12 +128,25 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
             continue;
         }
 
+        // Print disk information
+        Print(L"Disk %u:\n", i);
+        Print(L"  MediaId: %u\n", BlockIo->Media->MediaId);
+        Print(L"  RemovableMedia: %u\n", BlockIo->Media->RemovableMedia);
+        Print(L"  MediaPresent: %u\n", BlockIo->Media->MediaPresent);
+        Print(L"  LastBlock: %lu\n", BlockIo->Media->LastBlock);
+        Print(L"  BlockSize: %u\n", BlockIo->Media->BlockSize);
+        Print(L"  LogicalPartition: %u\n", BlockIo->Media->LogicalPartition);
+        Print(L"  ReadOnly: %u\n", BlockIo->Media->ReadOnly);
+        Print(L"  WriteCaching: %u\n", BlockIo->Media->WriteCaching);
+
         // Check the media
         if (!BlockIo->Media->MediaPresent) {
             Print(L"  No media present.\n");
             (*disk_info)[i].gpt_found = 0;
             continue;
         }
+
+        
 
         // Put Media into disk_info
         (*disk_info)[i].Media = *(BlockIo->Media);
@@ -161,6 +174,16 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
         (*disk_info)[i].gpt_found = 1;
         (*disk_info)[i].gpt_header = *GptHeader;
 
+        Print(L"  GPT Header found:\n");
+        Print(L"    Signature :%u", GptHeader->Header.Signature);
+        Print(L"    Revision: %u.%u\n", GptHeader->Header.Revision >> 16, GptHeader->Header.Revision & 0xFFFF);
+        Print(L"    HeaderSize: %u\n", GptHeader->Header.HeaderSize);
+        Print(L"    MyLBA: %lu\n", GptHeader->MyLBA);
+        Print(L"    AlternateLBA: %lu\n", GptHeader->AlternateLBA);
+        Print(L"    FirstUsableLBA: %lu\n", GptHeader->FirstUsableLBA);
+        Print(L"    LastUsableLBA: %lu\n", GptHeader->LastUsableLBA);
+        Print(L"    NumberOfPartitionEntries: %u\n", GptHeader->NumberOfPartitionEntries);
+
         // Read partition entries
         UINT8 partitionBuffer[BlockIo->Media->BlockSize];
         
@@ -180,8 +203,13 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 
             EFI_PARTITION_ENTRY *PartitionEntry = (EFI_PARTITION_ENTRY *)partitionBuffer;
             if (PartitionEntry->PartitionTypeGUID.Data1 != 0 || PartitionEntry->PartitionTypeGUID.Data2 != 0 || PartitionEntry->PartitionTypeGUID.Data3 != 0 || PartitionEntry->PartitionTypeGUID.Data4[0] != 0) {
-                (*disk_info)[i].partition_entries[j] = *PartitionEntry;
+                Print(L"    Partition %u:\n", j);
+                Print(L"      StartingLBA: %lu\n", PartitionEntry->StartingLBA);
+                Print(L"      EndingLBA: %lu\n", PartitionEntry->EndingLBA);
+                Print(L"      PartitionName: %s\n", PartitionEntry->PartitionName);
             }
+
+            (*disk_info)[i].partition_entries[j] = *PartitionEntry;
         }
     }
 
@@ -226,7 +254,21 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     UINTN no_of_disks;
     list_disks(ImageHandle, &disk_info, &no_of_disks);
 
-    // Open the menu
+    // Print
+    Print(L"NO OF DISKS %u", no_of_disks);
+    for (UINTN i = 0; i < no_of_disks; i++) {
+        Print(L"DISK %u\n", i);
+        if (disk_info[i].gpt_found == 1) {
+            Print(L" GPT HEADER FOUND\n PART ENTRY LBA %u", disk_info[i].gpt_header.PartitionEntryLBA);
+            for (UINT32 j = 0; j < disk_info[i].no_of_partition; j++) {
+                if (disk_info[i].partition_entries[j].PartitionTypeGUID.Data1 != 0 || disk_info[i].partition_entries[j].PartitionTypeGUID.Data2 != 0 || disk_info[i].partition_entries[j].PartitionTypeGUID.Data3 != 0 || disk_info[i].partition_entries[j].PartitionTypeGUID.Data4[0] != 0) {
+                    Print(L" PART %u\n", j);
+                    Print(L"[DEBUG] %x", disk_info[i].partition_entries[j].PartitionTypeGUID.Data1);
+                    Print(L" StartingLBA %u", disk_info[i].partition_entries[j].StartingLBA);   
+                }
+            }
+        }
+    }; 
 
 
     // Free up memory
