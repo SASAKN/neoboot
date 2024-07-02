@@ -5,6 +5,7 @@ efi/
 *.o
 *.so
 gnu-efi/
+build/
 OVMF.fd
 *.img
 *.dmg
