@@ -263,8 +263,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
             for (UINT32 j = 0; j < disk_info[i].no_of_partition; j++) {
                 if (disk_info[i].partition_entries[j].PartitionTypeGUID.Data1 != 0 || disk_info[i].partition_entries[j].PartitionTypeGUID.Data2 != 0 || disk_info[i].partition_entries[j].PartitionTypeGUID.Data3 != 0 || disk_info[i].partition_entries[j].PartitionTypeGUID.Data4[0] != 0) {
                     Print(L" PART %u\n", j);
-                    Print(L"[DEBUG] %x", disk_info[i].partition_entries[j].PartitionTypeGUID.Data1);
-                    Print(L" StartingLBA %u", disk_info[i].partition_entries[j].StartingLBA);   
+                    Print(L"[DEBUG] %x ", disk_info[i].partition_entries[j].PartitionTypeGUID.Data1);
+                    Print(L" StartingLBA %u\n", disk_info[i].partition_entries[j].StartingLBA);   
                 }
             }
         }
