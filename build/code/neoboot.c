@@ -257,6 +257,7 @@ void open_menu() {
     UINTN c, r;
     UINTN pos_x, pos_y;
     UINTN length;
+    UINTN selected_index;
 
     // Set the title
     CHAR16 *title = L"NEOBOOT Version 0.01";
@@ -301,6 +302,44 @@ void open_menu() {
     // Print the entry
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, string);
 
+    // Set the entry
+    string = L"OS 2";
+    length = StrLen(string);
+
+    // Calculate the title text position
+    pos_x = (c - length) / 2;
+    pos_y += 2;
+
+    // Set the cursor
+    status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, 0, pos_y);
+    ASSERT(!EFI_ERROR(status));
+
+    // Add spaces around the text
+    string = add_spaces_around_text(string, pos_x);
+
+    // Set the background color and font color
+    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY);
+    
+    // Print the entry
+    uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, string);
+
+    EFI_INPUT_KEY key;
+    while (TRUE) {
+        status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
+        if (!EFI_ERROR(status)) {
+            switch (key.UnicodeChar) {
+                case CHAR_CARRIAGE_RETURN: // Enterキー
+                    Print(L"Enter\n");
+                    break;
+                case ARROW_UP: // 上キー
+                    Print(L"UP\n");
+                    break;
+                case ARROW_DOWN: // 下キー
+                    Print(L"DOWN\n");
+                    break;
+            }
+        }
+    }
 
 }
 
@@ -342,8 +381,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     list_disks(ImageHandle, &disk_info, &no_of_disks);
 
     // Clear the screen
-    // open_menu();
-
+    open_menu();
 
     // Free up memory
     FreePool(map.buffer);
