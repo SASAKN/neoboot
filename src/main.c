@@ -293,10 +293,13 @@ void open_menu() {
     status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, 0, pos_y);
     ASSERT(!EFI_ERROR(status));
 
+    // Add spaces around the text
+    string = add_spaces_around_text(string, pos_x);
+
     // Set the background color and font color
     uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY);
     
-    // Print the title
+    // Print the entry
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, string);
 
 

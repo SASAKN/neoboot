@@ -19,6 +19,38 @@ UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...
     return num_printed;
 }
 
+// Add spaces around text
+CHAR16 *add_spaces_around_text(const CHAR16 *text, UINTN num_spaces) {
+    UINTN text_length = StrLen(text);
+    UINTN new_length = text_length + 2 * num_spaces;
+
+    // AllocatePoolでメモリーを確保
+    CHAR16 *new_text = AllocatePool((new_length + 1) * sizeof(CHAR16));
+    if (new_text == NULL) {
+        return NULL;
+    }
+
+    // 先頭にスペースを挿入
+    for (UINTN i = 0; i < num_spaces; i++) {
+        new_text[i] = ' ';
+    }
+
+    // 元の文字列を挿入
+    for (UINTN i = 0; i < text_length; i++) {
+        new_text[num_spaces + i] = text[i];
+    }
+
+    // 後尾にスペースを挿入
+    for (UINTN i = 0; i < num_spaces; i++) {
+        new_text[num_spaces + text_length + i] = ' ';
+    }
+
+    // 終端の設定
+    new_text[new_length] = '\0';
+
+    return new_text;
+}
+
 // Get memory type
 const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
     switch (type) {
@@ -217,6 +249,8 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
     FreePool(handleBuffer);
 }
 
+
+
 // Open the menu
 void open_menu() {
 
@@ -259,10 +293,13 @@ void open_menu() {
     status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, 0, pos_y);
     ASSERT(!EFI_ERROR(status));
 
+    // Add spaces around the text
+    string = add_spaces_around_text(string, pos_x);
+
     // Set the background color and font color
     uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY);
     
-    // Print the title
+    // Print the entry
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, string);
 
 
@@ -323,10 +360,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     end_time_second += end_time.Second - start_time.Second;
 
     // Print
-    Print(L"\nBoot Time: %us \n", end_time_second);
+    // Print(L"\nBoot Time: %us \n", end_time_second);
 
     // All Done
-    Print(L"All Done!\n");
+    // Print(L"All Done!\n");
 
     while (1) __asm__("hlt");
 
