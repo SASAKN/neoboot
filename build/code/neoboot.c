@@ -256,7 +256,7 @@ void open_menu() {
     pos_y += 4;
 
     // Set the cursor
-    status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, pos_x, pos_y);
+    status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, 0, pos_y);
     ASSERT(!EFI_ERROR(status));
 
     // Set the background color and font color
