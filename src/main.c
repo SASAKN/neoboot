@@ -250,7 +250,6 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 }
 
 
-
 // Open the menu
 void open_menu() {
 
@@ -344,7 +343,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     // Clear the screen
     open_menu();
-
 
     // Free up memory
     FreePool(map.buffer);

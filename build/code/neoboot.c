@@ -250,7 +250,6 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 }
 
 
-
 // Open the menu
 void open_menu() {
 
@@ -343,7 +342,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     list_disks(ImageHandle, &disk_info, &no_of_disks);
 
     // Clear the screen
-    open_menu();
+    // open_menu();
 
 
     // Free up memory
@@ -360,10 +359,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     end_time_second += end_time.Second - start_time.Second;
 
     // Print
-    // Print(L"\nBoot Time: %us \n", end_time_second);
+    Print(L"\nBoot Time: %us \n", end_time_second);
 
     // All Done
-    // Print(L"All Done!\n");
+    Print(L"All Done!\n");
 
     while (1) __asm__("hlt");
 
