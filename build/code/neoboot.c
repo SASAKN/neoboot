@@ -217,6 +217,57 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
     FreePool(handleBuffer);
 }
 
+// Open the menu
+void open_menu() {
+
+    EFI_STATUS status;
+    UINTN c, r;
+    UINTN pos_x, pos_y;
+    UINTN length;
+
+    // Set the title
+    CHAR16 *title = L"NEOBOOT Version 0.01";
+    length = StrLen(title);
+
+    // Clear the screen
+    uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+
+    // Get the conosole size
+    status = uefi_call_wrapper(ST->ConOut->QueryMode, 4, ST->ConOut, ST->ConOut->Mode->Mode, &c, &r);
+    ASSERT(!EFI_ERROR(status));
+
+    // Calculate the title text position
+    pos_x = (c - length) / 2;
+    pos_y = r / 8;
+
+    // Set the cursor
+    status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, pos_x, pos_y);
+    ASSERT(!EFI_ERROR(status));
+    
+    // Print the title
+    uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
+
+    // Set the entry
+    CHAR16 *string = L"OS 1";
+    length = StrLen(string);
+
+    // Calculate the title text position
+    pos_x = (c - length) / 2;
+    pos_y += 4;
+
+    // Set the cursor
+    status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, pos_x, pos_y);
+    ASSERT(!EFI_ERROR(status));
+
+    // Set the background color and font color
+    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY);
+    
+    // Print the title
+    uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, string);
+
+
+}
+
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     // Initialize
     EFI_STATUS status;
@@ -254,21 +305,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     UINTN no_of_disks;
     list_disks(ImageHandle, &disk_info, &no_of_disks);
 
-    // Print
-    Print(L"NO OF DISKS %u", no_of_disks);
-    for (UINTN i = 0; i < no_of_disks; i++) {
-        Print(L"DISK %u\n", i);
-        if (disk_info[i].gpt_found == 1) {
-            Print(L" GPT HEADER FOUND\n PART ENTRY LBA %u", disk_info[i].gpt_header.PartitionEntryLBA);
-            for (UINT32 j = 0; j < disk_info[i].no_of_partition; j++) {
-                if (disk_info[i].partition_entries[j].PartitionTypeGUID.Data1 != 0 || disk_info[i].partition_entries[j].PartitionTypeGUID.Data2 != 0 || disk_info[i].partition_entries[j].PartitionTypeGUID.Data3 != 0 || disk_info[i].partition_entries[j].PartitionTypeGUID.Data4[0] != 0) {
-                    Print(L" PART %u\n", j);
-                    Print(L"[DEBUG] %x", disk_info[i].partition_entries[j].PartitionTypeGUID.Data1);
-                    Print(L" StartingLBA %u", disk_info[i].partition_entries[j].StartingLBA);   
-                }
-            }
-        }
-    }; 
+    // Clear the screen
+    open_menu();
 
 
     // Free up memory
@@ -285,7 +323,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     end_time_second += end_time.Second - start_time.Second;
 
     // Print
-    Print(L"Boot Time: %us \n", end_time_second);
+    Print(L"\nBoot Time: %us \n", end_time_second);
 
     // All Done
     Print(L"All Done!\n");
