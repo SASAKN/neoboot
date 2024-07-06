@@ -284,6 +284,7 @@ void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UI
 // エントリーの再描画
 
 
+
 // Open the menu
 // 明日変更できる場所 エントリー追加を関数にしてモジュール化,エントリーを無数に追加,キーの判別,再描画 1h 50m
 void open_menu() {
@@ -326,7 +327,7 @@ void open_menu() {
     add_entry(L"OS 3", 2, &pos_x, &pos_y, c);
 
 
-    // Waiting for key      
+    // Main Loop 
     EFI_INPUT_KEY key;
     while (TRUE) {
         status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
