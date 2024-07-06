@@ -281,6 +281,9 @@ void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UI
 }
 
 
+// エントリーの再描画
+
+
 // Open the menu
 // 明日変更できる場所 エントリー追加を関数にしてモジュール化,エントリーを無数に追加,キーの判別,再描画 1h 50m
 void open_menu() {
@@ -323,29 +326,34 @@ void open_menu() {
     add_entry(L"OS 3", 2, &pos_x, &pos_y, c);
 
 
+    // Waiting for key      
     EFI_INPUT_KEY key;
     while (TRUE) {
         status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
         if (!EFI_ERROR(status)) {
-            switch (key.UnicodeChar) {
-                case CHAR_CARRIAGE_RETURN: // Enterキー
-                    Print(L"Enter\n");
-                    break;
-                default:
-                switch (key.ScanCode) {
-                case SCAN_UP:
-                    Print(L"Up");
-                    break;
-                case SCAN_DOWN:
-                    Print(L"Down");
-                    break;
-                default:
-                    break;
+            if (key.UnicodeChar != 0) {
+                switch (key.UnicodeChar) {
+                    case CHAR_CARRIAGE_RETURN: // Enterキー
+                        Print(L"Enter\n");
+                        break;
+                    default:
+                        break;
                 }
-                    break;
+            } else {
+                switch (key.ScanCode) {
+                    case SCAN_UP:
+                        Print(L"Up");
+                        break;
+                    case SCAN_DOWN:
+                        Print(L"Down");
+                        break;
+                    default:
+                        break;
             }
         }
     }
+}
+
 
 }
 
