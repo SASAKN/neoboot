@@ -249,8 +249,40 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
     FreePool(handleBuffer);
 }
 
+// Add a entry to the menu
+void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
+
+    EFI_STATUS status;
+    UINTN length;
+
+    // Get length name 
+    length = StrLen(name);
+
+    // Calculate the entry text position
+    *pos_x = (c - length) / 2;
+    *pos_y += 3;
+    if (no_of_entries == 0) {
+        *pos_y += 2;
+    }
+
+    // Set the cursor
+    status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, 0, *pos_y);
+    ASSERT(!EFI_ERROR(status));
+
+    // Add spaces around the text
+    name = add_spaces_around_text(name, *pos_x);
+
+    // Set the background color and font color
+    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY);
+    
+    // Print the entry
+    uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, name);
+
+}
+
 
 // Open the menu
+// 明日変更できる場所 エントリー追加を関数にしてモジュール化,エントリーを無数に追加,キーの判別,再描画 1h 50m
 void open_menu() {
 
     EFI_STATUS status;
@@ -281,47 +313,15 @@ void open_menu() {
     // Print the title
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
-    // Set the entry
-    CHAR16 *string = L"OS 1";
-    length = StrLen(string);
+    // Add the entry
+    add_entry(L"OS 1", 0, &pos_x, &pos_y, c);
 
-    // Calculate the title text position
-    pos_x = (c - length) / 2;
-    pos_y += 4;
+    // Add the entry
+    add_entry(L"OS 2", 1, &pos_x, &pos_y, c);
 
-    // Set the cursor
-    status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, 0, pos_y);
-    ASSERT(!EFI_ERROR(status));
+    // Add the entry
+    add_entry(L"OS 3", 2, &pos_x, &pos_y, c);
 
-    // Add spaces around the text
-    string = add_spaces_around_text(string, pos_x);
-
-    // Set the background color and font color
-    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY);
-    
-    // Print the entry
-    uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, string);
-
-    // Set the entry
-    string = L"OS 2";
-    length = StrLen(string);
-
-    // Calculate the title text position
-    pos_x = (c - length) / 2;
-    pos_y += 2;
-
-    // Set the cursor
-    status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, 0, pos_y);
-    ASSERT(!EFI_ERROR(status));
-
-    // Add spaces around the text
-    string = add_spaces_around_text(string, pos_x);
-
-    // Set the background color and font color
-    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY);
-    
-    // Print the entry
-    uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, string);
 
     EFI_INPUT_KEY key;
     while (TRUE) {
@@ -331,11 +331,17 @@ void open_menu() {
                 case CHAR_CARRIAGE_RETURN: // Enterキー
                     Print(L"Enter\n");
                     break;
-                case ARROW_UP: // 上キー
-                    Print(L"UP\n");
+                default:
+                switch (key.ScanCode) {
+                case SCAN_UP:
+                    Print(L"Up");
                     break;
-                case ARROW_DOWN: // 下キー
-                    Print(L"DOWN\n");
+                case SCAN_DOWN:
+                    Print(L"Down");
+                    break;
+                default:
+                    break;
+                }
                     break;
             }
         }
