@@ -281,9 +281,6 @@ void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UI
 }
 
 
-// エントリーの再描画
-
-
 
 // Open the menu
 // 明日変更できる場所 エントリー追加を関数にしてモジュール化,エントリーを無数に追加,キーの判別,再描画 1h 50m
@@ -319,13 +316,6 @@ void open_menu() {
 
     // Add the entry
     add_entry(L"OS 1", 0, &pos_x, &pos_y, c);
-
-    // Add the entry
-    add_entry(L"OS 2", 1, &pos_x, &pos_y, c);
-
-    // Add the entry
-    add_entry(L"OS 3", 2, &pos_x, &pos_y, c);
-
 
     // Main Loop 
     EFI_INPUT_KEY key;
