@@ -273,7 +273,7 @@ void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UI
     name = add_spaces_around_text(name, *pos_x);
 
     // Set the background color and font color
-    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY);
+    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_WHITE | EFI_BACKGROUND_BLACK);
     
     // Print the entry
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, name);
@@ -282,6 +282,7 @@ void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UI
 
 
 // エントリーの再描画
+
 
 
 // Open the menu
@@ -326,7 +327,8 @@ void open_menu() {
     add_entry(L"OS 3", 2, &pos_x, &pos_y, c);
 
 
-        EFI_INPUT_KEY key;
+    // Main Loop 
+    EFI_INPUT_KEY key;
     while (TRUE) {
         status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
         if (!EFI_ERROR(status)) {

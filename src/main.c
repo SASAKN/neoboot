@@ -250,7 +250,7 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 }
 
 // Add a entry to the menu
-void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
+void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c, MENU_ENTRY *entry) {
 
     EFI_STATUS status;
     UINTN length;
@@ -273,15 +273,12 @@ void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UI
     name = add_spaces_around_text(name, *pos_x);
 
     // Set the background color and font color
-    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY);
+    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_WHITE | EFI_BACKGROUND_BLACK);
     
     // Print the entry
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, name);
 
 }
-
-
-// エントリーの再描画
 
 
 
@@ -319,13 +316,6 @@ void open_menu() {
 
     // Add the entry
     add_entry(L"OS 1", 0, &pos_x, &pos_y, c);
-
-    // Add the entry
-    add_entry(L"OS 2", 1, &pos_x, &pos_y, c);
-
-    // Add the entry
-    add_entry(L"OS 3", 2, &pos_x, &pos_y, c);
-
 
     // Main Loop 
     EFI_INPUT_KEY key;
