@@ -249,8 +249,13 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
     FreePool(handleBuffer);
 }
 
-// Add a entry to the menu
-void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
+// Add a entry to the struct
+void add_entry(CHAR16 *os_name, MENU_ENTRY **entries) {
+
+}
+
+// Print a entry to the menu
+void print_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
 
     EFI_STATUS status;
     UINTN length;
@@ -283,7 +288,7 @@ void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UI
 
 
 // Open the menu
-// 明日変更できる場所 エントリー追加を関数にしてモジュール化,エントリーを無数に追加,キーの判別,再描画 1h 50m
+// 明日変更できる場所 モジュール化したメニューに構造体を追加し、自動追加を可能とする,再描画 1h 50m
 void open_menu() {
 
     EFI_STATUS status;
@@ -315,7 +320,7 @@ void open_menu() {
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
     // Add the entry
-    add_entry(L"OS 1", 0, &pos_x, &pos_y, c);
+    print_entry(L"OS 1", 0, &pos_x, &pos_y, c);
 
     // Main Loop 
     EFI_INPUT_KEY key;
