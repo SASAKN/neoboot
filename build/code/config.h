@@ -1,7 +1,26 @@
 #include <efi.h>
 
-// メニューエントリー
+// エントリー
 typedef struct _OS_MENU_ENTRY {
-    CHAR16 *os_name;
+
+    // OSの名前
+    CHAR16 *os_name; 
+
+    // 選択されているか
     BOOLEAN is_selected;
-} MENU_ENTRY;
+
+} entry;
+
+// エントリーリスト
+typedef struct _OS_MENU_ENTRY_LIST {
+
+    // エントリーの個数
+    unsigned int no_of_entries;
+
+    // 選択中のエントリー番号
+    unsigned int selected_entry_number;
+
+    // エントリーの配列
+    entry *entries;
+
+} entries_list;

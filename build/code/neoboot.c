@@ -249,8 +249,58 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
     FreePool(handleBuffer);
 }
 
-// Add a entry to the menu
-void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
+// Init a struct for the menu
+entries_list *init_entries_list() {
+
+    // Allocate the struct
+    entries_list *entries = AllocatePool(sizeof(entries_list) + 1);
+
+    // Initallize
+    if (entries != NULL) {
+        entries->entries = NULL;
+        entries->no_of_entries = 0;
+        entries->selected_entry_number = 0;
+    } else {
+        return NULL;
+    }
+
+    return entries;
+
+}
+
+// Add a entry to the struct
+void add_entry(CHAR16 *os_name, entries_list **entries) {
+
+    // Allocate a entry
+    if ((*entries)->no_of_entries == 0) {
+        (*entries)->entries = AllocatePool(sizeof(entry));
+        (*entries)->no_of_entries += 1;
+        if ((*entries)->entries == NULL) {
+            (*entries) = NULL;
+            return;
+        }
+    }
+
+    // Reallocate entries
+    if ((*entries)->no_of_entries != 0) {
+        (*entries)->entries = ReallocatePool((*entries)->entries, ((*entries)->no_of_entries * sizeof(entry)), ( ((*entries)->no_of_entries + 1) * sizeof(entry)));
+        if ((*entries)->entries == NULL) {
+            (*entries) = NULL;
+            return;
+        }
+    }
+
+    // Create a entry
+    (*entries)->entries->os_name = os_name;
+    (*entries)->entries->is_selected = 0; // 選択していない
+
+    // Return
+    return;
+
+}
+
+// Print a entry to the menu
+void print_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
 
     EFI_STATUS status;
     UINTN length;
@@ -283,7 +333,7 @@ void add_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UI
 
 
 // Open the menu
-// 明日変更できる場所 エントリー追加を関数にしてモジュール化,エントリーを無数に追加,キーの判別,再描画 1h 50m
+// 明日変更できる場所 モジュール化したメニューに構造体を追加し、自動追加を可能とする,再描画 1h 50m
 void open_menu() {
 
     EFI_STATUS status;
@@ -315,7 +365,7 @@ void open_menu() {
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
     // Add the entry
-    add_entry(L"OS 1", 0, &pos_x, &pos_y, c);
+    print_entry(L"OS 1", 0, &pos_x, &pos_y, c);
 
     // Main Loop 
     EFI_INPUT_KEY key;
