@@ -297,10 +297,18 @@ void add_a_entry(CHAR16 *os_name, entries_list **entries) {
 }
 
 // Print a entry to the menu
-void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
+void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c, BOOLEAN is_selected) {
 
     EFI_STATUS status;
     UINTN length;
+
+    // Print Attribute Modes
+    UINTN not_selected = EFI_WHITE | EFI_BACKGROUND_BLACK;
+    UINTN selected = EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY;
+
+    // Decide text color and background color
+    UINTN font;
+    is_selected == 0 ? (font = not_selected) : (font = selected);
 
     // Get length name 
     length = StrLen(name);
@@ -320,7 +328,7 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
     name = add_spaces_around_text(name, *pos_x);
 
     // Set the background color and font color
-    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_WHITE | EFI_BACKGROUND_BLACK);
+    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, font);
     
     // Print the entry
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, name);
@@ -333,19 +341,23 @@ void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
 
     EFI_STATUS status;
 
+    // if entries is NULL, return
     if (entries == NULL) {
         return;
     }
 
+    // Change to selected state
+    entries->entries[0].is_selected = 1;
+
     // Print entries
     for (UINTN i = 0; i < entries->no_of_entries; i++) {
-        print_a_entry(entries->entries[i].os_name, i, pos_x, pos_y, c);
+        print_a_entry(entries->entries[i].os_name, i, pos_x, pos_y, c, entries->entries[i].is_selected);
     }
 
 }
 
 // Open the menu
-// 明日変更できる場所 モジュール化したメニューに構造体を追加し、自動追加を可能とする,再描画 1h 50m
+// 再描画 1h 50m
 void open_menu() {
 
     EFI_STATUS status;
