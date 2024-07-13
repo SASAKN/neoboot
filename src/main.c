@@ -331,7 +331,6 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
 }
 
 
-
 // Open the menu
 // 明日変更できる場所 モジュール化したメニューに構造体を追加し、自動追加を可能とする,再描画 1h 50m
 void open_menu() {
@@ -365,7 +364,7 @@ void open_menu() {
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
     // Add the entry
-    print_entry(L"OS 1", 0, &pos_x, &pos_y, c);
+    print_a_entry(L"OS 1", 0, &pos_x, &pos_y, c);
 
     // Main Loop 
     EFI_INPUT_KEY key;

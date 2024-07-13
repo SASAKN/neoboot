@@ -291,7 +291,7 @@ void add_entry(CHAR16 *os_name, entries_list **entries) {
     }
 
     // Create a entry
-    (*entries)->entries->os_name = os_name;
+    (*entries)->entries->os_name = os_name; // OSの名前
     (*entries)->entries->is_selected = 0; // 選択していない
 
     // Return
@@ -300,7 +300,7 @@ void add_entry(CHAR16 *os_name, entries_list **entries) {
 }
 
 // Print a entry to the menu
-void print_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
+void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
 
     EFI_STATUS status;
     UINTN length;
@@ -329,7 +329,6 @@ void print_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, 
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, name);
 
 }
-
 
 
 // Open the menu
@@ -365,7 +364,7 @@ void open_menu() {
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
     // Add the entry
-    print_entry(L"OS 1", 0, &pos_x, &pos_y, c);
+    print_a_entry(L"OS 1", 0, &pos_x, &pos_y, c);
 
     // Main Loop 
     EFI_INPUT_KEY key;
