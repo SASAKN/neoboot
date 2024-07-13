@@ -269,7 +269,7 @@ entries_list *init_entries_list() {
 }
 
 // Add a entry to the struct
-void add_entry(CHAR16 *os_name, entries_list **entries) {
+void add_a_entry(CHAR16 *os_name, entries_list **entries) {
 
     // Allocate a entry
     if ((*entries)->no_of_entries == 0) {
@@ -331,6 +331,18 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
 }
 
 
+// Print entries
+void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
+
+    EFI_STATUS status;
+
+    // Print entries
+    for (UINTN i = 0; i < entries->no_of_entries; i++) {
+        print_a_entry(entries->entries[i].os_name, i, pos_x, pos_y, c);
+    }
+
+}
+
 // Open the menu
 // 明日変更できる場所 モジュール化したメニューに構造体を追加し、自動追加を可能とする,再描画 1h 50m
 void open_menu() {
@@ -363,8 +375,18 @@ void open_menu() {
     // Print the title
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
-    // Add the entry
-    print_a_entry(L"OS 1", 0, &pos_x, &pos_y, c);
+    // Create entries list
+    entries_list *list_entries;
+
+    // Init entries list
+    list_entries = init_entries_list();
+
+    // Add entries
+    add_a_entry(L"OS 1", &list_entries);
+    add_a_entry(L"OS 2", &list_entries);
+
+    // Print entries
+    print_entries(list_entries, &pos_x, &pos_y, c);
 
     // Main Loop 
     EFI_INPUT_KEY key;
