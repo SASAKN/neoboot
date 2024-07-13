@@ -253,15 +253,13 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 entries_list *init_entries_list() {
 
     // Allocate the struct
-    entries_list *entries = AllocatePool(sizeof(entries_list) + 1);
+    entries_list *entries = AllocatePool(sizeof(entries_list));
 
     // Initallize
     if (entries != NULL) {
         entries->entries = NULL;
         entries->no_of_entries = 0;
         entries->selected_entry_number = 0;
-    } else {
-        return NULL;
     }
 
     return entries;
@@ -274,25 +272,24 @@ void add_a_entry(CHAR16 *os_name, entries_list **entries) {
     // Allocate a entry
     if ((*entries)->no_of_entries == 0) {
         (*entries)->entries = AllocatePool(sizeof(entry));
+        if ((*entries)->entries == NULL) {
+            return;
+        }
+        (*entries)->no_of_entries = 1;
+    } else {
+        // Reallocate a entry
+        entry *new_entries = ReallocatePool((*entries)->entries, ((*entries)->no_of_entries * sizeof(entry)), ( ((*entries)->no_of_entries + 1) * sizeof(entry)));
+        if (new_entries == NULL) {
+            return;
+        }
+        (*entries)->entries = new_entries;
         (*entries)->no_of_entries += 1;
-        if ((*entries)->entries == NULL) {
-            (*entries) = NULL;
-            return;
-        }
-    }
-
-    // Reallocate entries
-    if ((*entries)->no_of_entries != 0) {
-        (*entries)->entries = ReallocatePool((*entries)->entries, ((*entries)->no_of_entries * sizeof(entry)), ( ((*entries)->no_of_entries + 1) * sizeof(entry)));
-        if ((*entries)->entries == NULL) {
-            (*entries) = NULL;
-            return;
-        }
     }
 
     // Create a entry
-    (*entries)->entries->os_name = os_name; // OSの名前
-    (*entries)->entries->is_selected = 0; // 選択していない
+    UINT32 index = (*entries)->no_of_entries - 1;
+    (*entries)->entries[index].os_name = os_name; // OSの名前
+    (*entries)->entries[index].is_selected = 0; // 選択していない
 
     // Return
     return;
@@ -335,6 +332,10 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
 void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
 
     EFI_STATUS status;
+
+    if (entries == NULL) {
+        return;
+    }
 
     // Print entries
     for (UINTN i = 0; i < entries->no_of_entries; i++) {
