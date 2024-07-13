@@ -291,7 +291,7 @@ void add_entry(CHAR16 *os_name, entries_list **entries) {
     }
 
     // Create a entry
-    (*entries)->entries->os_name = os_name;
+    (*entries)->entries->os_name = os_name; // OSの名前
     (*entries)->entries->is_selected = 0; // 選択していない
 
     // Return
