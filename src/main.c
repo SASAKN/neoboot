@@ -356,6 +356,11 @@ void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
 
 }
 
+// Redraw the menu
+void redraw_menu() {
+
+}
+
 // Open the menu
 // 再描画 1h 50m
 void open_menu() {
