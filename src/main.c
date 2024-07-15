@@ -477,8 +477,14 @@ void open_menu() {
             } else {
                 switch (key.ScanCode) {
                     case SCAN_UP:
+
+                        // 0は上に行けないし、再描画する必要もない
+                        if (selected_index  == 0) {
+                            break;
+                        }
+
                         // Indexの変更
-                        selected_index = (selected_index == 0) ? 0 : selected_index - 1; // 0なら上に行けない
+                        selected_index = selected_index - 1;
 
                         // 表示順を変更
                         modify_an_entry_order(list_entries, selected_index);
@@ -487,8 +493,14 @@ void open_menu() {
                         redraw_menu(title, c, r, list_entries);
                         break;
                     case SCAN_DOWN:
+
+                        // 合計数より下には行けないし、再描画する必要もない
+                        if (selected_index  == list_entries->no_of_entries - 1) {
+                            break;
+                        }
+
                         // Indexの変更
-                        selected_index = (selected_index == list_entries->no_of_entries - 1) ? list_entries->no_of_entries - 1 : selected_index + 1; // 合計ならば下に行けない
+                        selected_index = selected_index + 1;
 
                         // 表示順を変更
                         modify_an_entry_order(list_entries, selected_index);
