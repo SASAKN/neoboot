@@ -508,6 +508,8 @@ void open_menu() {
                         // 再描画
                         redraw_menu(title, c, r, list_entries);
                         break;
+                    case SCAN_ESC:
+                        return; // BIOSに戻る
                     default:
                         break;
                 }
@@ -575,7 +577,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // All Done
     Print(L"All Done!\n");
 
-    while (1) __asm__("hlt");
+    // Wait for a minute
+    uefi_call_wrapper(BS->Stall, 1, 5000000);
 
     return EFI_SUCCESS;
 }

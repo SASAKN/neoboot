@@ -139,7 +139,7 @@ while (( $# > 0 )); do
       ;;
     runonly | runonly)
       kill_proc
-      run_image
+      run_image_cui
 
       # CUIかGUIか
       if [ "$2" = "gui" ]; then
