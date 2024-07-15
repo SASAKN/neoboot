@@ -414,8 +414,52 @@ void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries) {
 
 }
 
+// Open the console
+// コンソールの実装 1h
+void open_console() {
+
+    EFI_STATUS status;
+
+    // Clear the screen
+    uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+
+    // Print the title
+    Print(L"Welcome to NEOBOOT Console !\n");
+
+    // Print the screen
+    Print(L"neoboot > ");
+
+    // Buffer
+    CHAR16 *buffer = AllocatePool(1000);
+    UINT32 buffer_index = 0;
+
+    // Main Loop
+    EFI_INPUT_KEY key;
+    while (TRUE) {
+
+        // キーを受け付ける
+        status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
+
+        if (!EFI_ERROR(status)) {
+            if (key.UnicodeChar != CHAR_CARRIAGE_RETURN) {
+
+                // Save texts and Print
+                Print(L"%c", key.UnicodeChar);
+                buffer[buffer_index] = key.UnicodeChar;
+                buffer_index++;
+                
+            } else {
+                buffer = AllocateZeroPool(1000);
+            }
+                
+            
+        }
+
+    }
+
+}
+
 // Open the menu
-// 再描画 1h 50m
 void open_menu() {
 
     EFI_STATUS status;
@@ -471,6 +515,9 @@ void open_menu() {
                     case CHAR_CARRIAGE_RETURN: // Enterキー
                         redraw_menu(title, c, r, list_entries);
                         break;
+                    case 'c':
+                    case 'C':
+                        open_console();
                     default:
                         break;
                 }
