@@ -361,9 +361,6 @@ void modify_an_entry_order(entries_list *list_entries, UINT32 new_entry_order) {
     // Change the order
     list_entries->selected_entry_number = new_entry_order;
 
-    // Change the status
-    list_entries->entries[new_entry_order].is_selected = 1;
-
     // Return
     return;
 

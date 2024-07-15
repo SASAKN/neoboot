@@ -307,6 +307,7 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
     // Print Attribute Modes
     UINTN not_selected = EFI_WHITE | EFI_BACKGROUND_BLACK;
     UINTN selected = EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY;
+    UINTN default = EFI_LIGHTGRAY | EFI_BLACK;
 
     // Decide text color and background color
     UINTN font;
@@ -335,6 +336,12 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
     // Print the entry
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, name);
 
+    // Back to the default
+    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, default);
+
+    // Return
+    return;
+
 }
 
 
@@ -360,9 +367,6 @@ void modify_an_entry_order(entries_list *list_entries, UINT32 new_entry_order) {
 
     // Change the order
     list_entries->selected_entry_number = new_entry_order;
-
-    // Change the status
-    list_entries->entries[new_entry_order].is_selected = 1;
 
     // Return
     return;
