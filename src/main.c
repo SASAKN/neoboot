@@ -357,7 +357,34 @@ void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
 }
 
 // Redraw the menu
-void redraw_menu() {
+void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries) {
+
+    EFI_STATUS status;
+    UINTN pos_x, pos_y;
+    UINTN length;
+
+    // Clear the screen
+    uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+
+    // Get the title
+    length = StrLen(title);
+
+    // Calculate the title position
+    pos_x = (c - length) / 2;
+    pos_y = r / 8;
+
+    // Set the cursor
+    status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, pos_x, pos_y);
+    ASSERT(!EFI_ERROR(status));
+
+    // Print the title
+    uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
+
+    // Print entries
+    print_entries(list_entries, &pos_x, &pos_y, c);
+
+    // Return
+    return;
 
 }
 
@@ -414,7 +441,8 @@ void open_menu() {
             if (key.UnicodeChar != 0) {
                 switch (key.UnicodeChar) {
                     case CHAR_CARRIAGE_RETURN: // Enterキー
-                        Print(L"Enter\n");
+                        redraw_menu(title, c, r, list_entries);
+                        Print(L"Redrawed\n");
                         break;
                     default:
                         break;
@@ -474,7 +502,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     UINTN no_of_disks;
     list_disks(ImageHandle, &disk_info, &no_of_disks);
 
-    // Clear the screen
+    // Open a menu
     open_menu();
 
     // Free up memory
