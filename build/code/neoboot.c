@@ -307,6 +307,7 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
     // Print Attribute Modes
     UINTN not_selected = EFI_WHITE | EFI_BACKGROUND_BLACK;
     UINTN selected = EFI_BLACK | EFI_BACKGROUND_LIGHTGRAY;
+    UINTN default_font = EFI_LIGHTGRAY | EFI_BLACK;
 
     // Decide text color and background color
     UINTN font;
@@ -335,6 +336,12 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
     // Print the entry
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, name);
 
+    // Back to the default
+    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, default_font);
+
+    // Return
+    return;
+
 }
 
 
@@ -360,6 +367,15 @@ void modify_an_entry_order(entries_list *list_entries, UINT32 new_entry_order) {
 
     // Change the order
     list_entries->selected_entry_number = new_entry_order;
+
+    // Change the state
+    for (UINT32 i = 0; i < list_entries->no_of_entries; i++) {
+        if (i == new_entry_order) {
+            list_entries->entries[i].is_selected = TRUE;
+        } else {
+            list_entries->entries[i].is_selected = FALSE;
+        }
+    }
 
     // Return
     return;
@@ -470,13 +486,15 @@ void open_menu() {
                         break;
                     case SCAN_DOWN:
                         // Indexの変更
-                        selected_index = (selected_index == list_entries->no_of_entries) ? list_entries->no_of_entries : selected_index + 1; // 合計ならば下に行けない
+                        selected_index = (selected_index == list_entries->no_of_entries - 1) ? list_entries->no_of_entries - 1 : selected_index + 1; // 合計ならば下に行けない
 
                         // 表示順を変更
                         modify_an_entry_order(list_entries, selected_index);
 
                         // 再描画
                         redraw_menu(title, c, r, list_entries);
+
+                        Print(L"[ DEBUG ] no_of_entries = %d", list_entries->no_of_entries);
                         break;
                     default:
                         break;
