@@ -409,7 +409,7 @@ void open_menu() {
     UINTN c, r;
     UINTN pos_x, pos_y;
     UINTN length;
-    UINTN selected_index;
+    UINT32 selected_index = 0; // デフォルトで0が選択される
 
     // Set the title
     CHAR16 *title = L"NEOBOOT Version 0.01";
@@ -455,7 +455,6 @@ void open_menu() {
                 switch (key.UnicodeChar) {
                     case CHAR_CARRIAGE_RETURN: // Enterキー
                         redraw_menu(title, c, r, list_entries);
-                        Print(L"Redrawed\n");
                         break;
                     default:
                         break;
@@ -463,19 +462,31 @@ void open_menu() {
             } else {
                 switch (key.ScanCode) {
                     case SCAN_UP:
-                        Print(L"Up");
+                        // Indexの変更
+                        selected_index = (selected_index == 0) ? 0 : selected_index - 1; // 0なら上に行けない
+
+                        // 表示順を変更
+                        modify_an_entry_order(list_entries, selected_index);
+
+                        // 再描画
+                        redraw_menu(title, c, r, list_entries);
                         break;
                     case SCAN_DOWN:
-                        Print(L"Down");
+                        // Indexの変更
+                        selected_index = (selected_index == list_entries->no_of_entries) ? list_entries->no_of_entries : selected_index + 1; // 合計ならば下に行けない
+
+                        // 表示順を変更
+                        modify_an_entry_order(list_entries, selected_index);
+
+                        // 再描画
+                        redraw_menu(title, c, r, list_entries);
                         break;
                     default:
                         break;
+                }
             }
         }
     }
-}
-
-
 }
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
