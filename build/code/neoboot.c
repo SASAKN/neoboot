@@ -287,9 +287,11 @@ void add_a_entry(CHAR16 *os_name, entries_list **entries) {
     }
 
     // Create a entry
+    BOOLEAN is_selected;
     UINT32 index = (*entries)->no_of_entries - 1;
+    index == 0 ? (is_selected = TRUE) : (is_selected = FALSE); // デフォルトで0が選択される
     (*entries)->entries[index].os_name = os_name; // OSの名前
-    (*entries)->entries[index].is_selected = 0; // 選択していない
+    (*entries)->entries[index].is_selected = is_selected; // 選択状態
 
     // Return
     return;
@@ -353,6 +355,20 @@ void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
     for (UINTN i = 0; i < entries->no_of_entries; i++) {
         print_a_entry(entries->entries[i].os_name, i, pos_x, pos_y, c, entries->entries[i].is_selected);
     }
+
+}
+
+// エントリー番号の変更
+void modify_an_entry_order(entries_list *list_entries, UINT32 new_entry_order) {
+
+    // Change the order
+    list_entries->selected_entry_number = new_entry_order;
+
+    // Change the status
+    list_entries->entries[new_entry_order]->is_selected = 1;
+
+    // Return
+    return;
 
 }
 
