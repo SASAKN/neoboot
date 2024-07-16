@@ -422,7 +422,7 @@ void determine_command(CHAR16 *buffer) {
         Print(L"\nNEOBOOT Console\nCommands\n  1.help - shows help\n  2.menu - back to menu\n  3.start [number] - start any entry\n  4.version - shows version of neoboot\n  5.memmap - shows memory map\n  6.pcinfo - shows info of your pc\n");
 
     } else {
-        Print(L"Unknown Command : %s", buffer);
+        Print(L"\nUnknown Command : %s", buffer);
     }
 
     // コンソールの表示
