@@ -455,6 +455,7 @@ void open_console() {
         // Reauest keytype
         status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
 
+        // Request Commands
         if (!EFI_ERROR(status)) {
             if (key.UnicodeChar != CHAR_CARRIAGE_RETURN) {
 
@@ -463,6 +464,8 @@ void open_console() {
                 buffer[buffer_index] = key.UnicodeChar;
                 buffer_index++;
                 
+            } else if (key.ScanCode == SCAN_ESC) {
+                return;
             } else {
                 
                 buffer[buffer_index] = '\0'; // コマンドの終端
@@ -471,12 +474,9 @@ void open_console() {
                 determine_command(buffer); // コマンドの判別
 
             }
-                
-            
         }
 
     }
-
 }
 
 // Open the menu

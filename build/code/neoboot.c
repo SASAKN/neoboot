@@ -422,7 +422,7 @@ void determine_command(CHAR16 *buffer) {
         Print(L"\nNEOBOOT Console\nCommands\n  1.help - shows help\n  2.menu - back to menu\n  3.start [number] - start any entry\n  4.version - shows version of neoboot\n  5.memmap - shows memory map\n  6.pcinfo - shows info of your pc\n");
 
     } else {
-        Print(L"Unknown Command : %s", buffer);
+        Print(L"\nUnknown Command : %s", buffer);
     }
 
     // コンソールの表示
@@ -455,6 +455,7 @@ void open_console() {
         // Reauest keytype
         status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
 
+        // Request Commands
         if (!EFI_ERROR(status)) {
             if (key.UnicodeChar != CHAR_CARRIAGE_RETURN) {
 
@@ -463,6 +464,8 @@ void open_console() {
                 buffer[buffer_index] = key.UnicodeChar;
                 buffer_index++;
                 
+            } else if (key.ScanCode == SCAN_ESC) {
+                return;
             } else {
                 
                 buffer[buffer_index] = '\0'; // コマンドの終端
@@ -471,12 +474,9 @@ void open_console() {
                 determine_command(buffer); // コマンドの判別
 
             }
-                
-            
         }
 
     }
-
 }
 
 // Open the menu
