@@ -414,6 +414,18 @@ void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries) {
 
 }
 
+// コマンドの判別
+void determine_command(CHAR16 *buffer) {
+    if ( StrCmp(buffer, L"help") == 0) {
+
+        // Shows help
+        Print(L"NEOBOOT Console\nCommands\n  1.help - shows help\n  2.menu - back to menu\n  3.start [number] - start any entry\n  4.version - shows version of neoboot\n  5.memmap - shows memory map\n  6.pcinfo - shows info of your pc\n");
+
+    } else {
+        Print(L"Unknown Command : %s", buffer);
+    }
+}
+
 // Open the console
 // コンソールの実装 1h
 void open_console() {
@@ -430,14 +442,14 @@ void open_console() {
     Print(L"neoboot > ");
 
     // Buffer
-    CHAR16 *buffer = AllocatePool(1000);
+    CHAR16 buffer[1000]; // コマンドは1000文字以内
     UINT32 buffer_index = 0;
 
     // Main Loop
     EFI_INPUT_KEY key;
     while (TRUE) {
 
-        // キーを受け付ける
+        // Reauest keytype
         status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
 
         if (!EFI_ERROR(status)) {
@@ -449,7 +461,12 @@ void open_console() {
                 buffer_index++;
                 
             } else {
-                buffer = AllocateZeroPool(1000);
+                
+                buffer[buffer_index] = '\0'; // コマンドの終端
+                buffer_index = 0; // バッファーも初めに戻る
+
+                determine_command(buffer); // コマンドの判別
+
             }
                 
             
