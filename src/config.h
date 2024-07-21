@@ -1,3 +1,6 @@
+#ifndef _CONFIG_H
+
+#define _CONFIG_H
 #include <efi.h>
 
 // エントリー
@@ -24,3 +27,5 @@ typedef struct _OS_MENU_ENTRY_LIST {
     entry *entries;
 
 } entries_list;
+
+#endif

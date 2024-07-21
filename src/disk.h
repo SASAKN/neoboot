@@ -1,3 +1,6 @@
+#ifndef _DISK_H
+#define _DISK_H
+
 #include <efi.h>
 #include <efilib.h>
 #include <efigpt.h>
@@ -10,3 +13,5 @@ struct disk_info{
     UINT32 no_of_partition;
     EFI_PARTITION_ENTRY *partition_entries;
 };
+
+#endif
