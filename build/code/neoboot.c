@@ -122,8 +122,6 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
     EFI_STATUS status;
     EFI_HANDLE *handleBuffer;
     UINTN handleCount;
-
-    // Block Devices
     EFI_GUID BlockIoProtocol = EFI_BLOCK_IO_PROTOCOL_GUID;
     EFI_BLOCK_IO_PROTOCOL *BlockIo;
     EFI_DISK_IO_PROTOCOL *DiskIo;
@@ -162,7 +160,6 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
             Print(L"Failed to open Disk I/O protocol: %r\n", status);
             continue;
         }
-
 
         // Print disk information
         Print(L"Disk %u:\n", i);
@@ -251,6 +248,52 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 
     // Free the handle buffer
     FreePool(handleBuffer);
+}
+
+// List Bootable Disk
+void list_bootable_disk(struct bootable_disk_info **disk_info) {
+    EFI_STATUS status;
+
+    // Handle
+    EFI_HANDLE *handle_buffer;
+    UINTN handle_count;
+
+    // FAT
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs;
+    EFI_HANDLE *device_handle;
+    EFI_FILE_PROTOCOL *root;
+
+    // Get FS Protocols
+    status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &gEfiSimpleFileSystemProtocolGuid, NULL, &handle_count, &handle_buffer);
+    if (EFI_ERROR(status)) {
+        Print(L"Failed to locate handles\n");
+        return;
+    }
+
+    // Allocate the srtuct
+    *disk_info = AllocatePool(sizeof(struct bootable_disk_info));
+
+    // Iterate over each handle
+    for (UINTN i = 0; i < handle_count; i++) {
+
+        // Select Device Handle
+        device_handle = handle_buffer[i];
+
+        // Get a Simple FS Protocol
+        status = uefi_call_wrapper(BS->HandleProtocol, 3, device_handle, &gEfiSimpleFileSystemProtocolGuid, (VOID **) &fs);
+        ASSERT(!EFI_ERROR(status));
+
+        // Open Root Directory
+        status = uefi_call_wrapper(fs->OpenVolume, 2, fs, &root);
+        ASSERT(!EFI_ERROR(status));
+
+        // Put root struct in struct
+        (*disk_info)->root = root;
+    }
+
+    // Count devices
+    (*disk_info)->no_of_partition = handle_count;
+
 }
 
 // Init a struct for the menu
