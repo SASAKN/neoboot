@@ -469,7 +469,7 @@ void open_console() {
                 buffer_index++;
                 
             } else if (key.ScanCode == SCAN_ESC) {
-                return;
+                open_menu();
             } else {
                 
                 buffer[buffer_index] = '\0'; // コマンドの終端

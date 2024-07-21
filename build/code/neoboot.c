@@ -122,6 +122,8 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
     EFI_STATUS status;
     EFI_HANDLE *handleBuffer;
     UINTN handleCount;
+
+    // Block Devices
     EFI_GUID BlockIoProtocol = EFI_BLOCK_IO_PROTOCOL_GUID;
     EFI_BLOCK_IO_PROTOCOL *BlockIo;
     EFI_DISK_IO_PROTOCOL *DiskIo;
@@ -160,6 +162,7 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
             Print(L"Failed to open Disk I/O protocol: %r\n", status);
             continue;
         }
+
 
         // Print disk information
         Print(L"Disk %u:\n", i);
@@ -469,7 +472,7 @@ void open_console() {
                 buffer_index++;
                 
             } else if (key.ScanCode == SCAN_ESC) {
-                return;
+                open_menu();
             } else {
                 
                 buffer[buffer_index] = '\0'; // コマンドの終端

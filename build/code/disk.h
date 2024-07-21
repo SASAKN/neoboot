@@ -12,6 +12,7 @@ struct disk_info{
     EFI_PARTITION_TABLE_HEADER gpt_header;
     UINT32 no_of_partition;
     EFI_PARTITION_ENTRY *partition_entries;
+    
 };
 
 #endif
