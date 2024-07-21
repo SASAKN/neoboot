@@ -1,3 +1,6 @@
+#ifndef _MEMORY_H
+#define _MEMORY_H
+
 #include <efi.h>
 #include <efilib.h>
 
@@ -10,3 +13,5 @@ typedef struct memory_map {
     UINT32 desc_ver;
     UINTN entry;
 } memmap;
+
+#endif

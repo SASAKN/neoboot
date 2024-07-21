@@ -7,6 +7,7 @@
 #include "memory.h"
 #include "disk.h"
 #include "config.h"
+#include "proto.h"
 
 // AsciiSPrint
 UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...) {
@@ -421,6 +422,9 @@ void determine_command(CHAR16 *buffer) {
         // Shows help
         Print(L"\nNEOBOOT Console\nCommands\n  1.help - shows help\n  2.menu - back to menu\n  3.start [number] - start any entry\n  4.version - shows version of neoboot\n  5.memmap - shows memory map\n  6.pcinfo - shows info of your pc\n");
 
+    } else if (StrCmp(buffer, L"menu") == 0 ) {
+        // Back to the menu
+        open_menu();
     } else {
         Print(L"\nUnknown Command : %s", buffer);
     }

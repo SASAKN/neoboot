@@ -8,9 +8,9 @@
 #include <efilib.h>
 
 // NEOBOOT FILES
-#include <memory.h>
-#include <disk.h>
-#include <config.h>
+#include "memory.h"
+#include "disk.h"
+#include "config.h"
 
 // Functions
 
