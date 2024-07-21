@@ -672,6 +672,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     UINTN no_of_disks;
     list_disks(ImageHandle, &disk_info, &no_of_disks);
 
+    // Get bootable disks
+    struct bootable_disk_info *bootable_disks;
+    list_bootable_disk(&bootable_disks);
+
     // Open a menu
     open_menu();
 
