@@ -255,8 +255,8 @@ void list_bootable_disk(struct bootable_disk_info **disk_info) {
     EFI_STATUS status;
 
     // Handle
-    EFI_HANDLE *handle_buffer;
-    UINTN handle_count;
+    EFI_HANDLE *handle_buffer = NULL;
+    UINTN handle_count = 0;
 
     // FAT
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs;
@@ -293,6 +293,9 @@ void list_bootable_disk(struct bootable_disk_info **disk_info) {
 
     // Count devices
     (*disk_info)->no_of_partition = handle_count;
+
+    // Free
+    FreePool(handle_buffer);
 
 }
 

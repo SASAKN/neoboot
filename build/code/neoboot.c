@@ -255,8 +255,8 @@ void list_bootable_disk(struct bootable_disk_info **disk_info) {
     EFI_STATUS status;
 
     // Handle
-    EFI_HANDLE *handle_buffer;
-    UINTN handle_count;
+    EFI_HANDLE *handle_buffer = NULL;
+    UINTN handle_count = 0;
 
     // FAT
     EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs;
@@ -293,6 +293,9 @@ void list_bootable_disk(struct bootable_disk_info **disk_info) {
 
     // Count devices
     (*disk_info)->no_of_partition = handle_count;
+
+    // Free
+    FreePool(handle_buffer);
 
 }
 
@@ -675,8 +678,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Get bootable disks
     struct bootable_disk_info *bootable_disks;
     list_bootable_disk(&bootable_disks);
+    Print(L"Count  : %d", bootable_disks->no_of_partition);
+    while(1);
 
-    // Open a menu
+    // Open a menu  
     open_menu();
 
     // Free up memory
