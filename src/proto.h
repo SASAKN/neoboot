@@ -27,7 +27,7 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 
 // Disk
 void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_of_disks);
-void list_bootable_disk(struct bootable_disk_info **disk_info);
+void list_bootable_disk(struct bootable_disk_info **disk_info, UINTN *no_of_disks);
 
 // Menu
 entries_list *init_entries_list();

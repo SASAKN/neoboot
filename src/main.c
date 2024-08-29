@@ -251,7 +251,7 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 }
 
 // List Bootable Disk
-void list_bootable_disk(struct bootable_disk_info **disk_info) {
+void list_bootable_disk(struct bootable_disk_info **disk_info, UINTN *no_of_disks) {
     EFI_STATUS status;
 
     // Handle
@@ -272,6 +272,8 @@ void list_bootable_disk(struct bootable_disk_info **disk_info) {
 
     // Allocate the srtuct
     *disk_info = AllocatePool(sizeof(struct bootable_disk_info));
+
+    *no_of_disks = handle_count;
 
     // Iterate over each handle
     for (UINTN i = 0; i < handle_count; i++) {
@@ -677,7 +679,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     // Get bootable disks
     struct bootable_disk_info *bootable_disks;
-    list_bootable_disk(&bootable_disks);
+    UINTN no_of_bootable_disks;
+    list_bootable_disk(&bootable_disks, &no_of_bootable_disks);
 
     // Open a menu
     open_menu();
