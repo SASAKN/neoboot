@@ -42,6 +42,9 @@ void open_menu();
 void determine_command(CHAR16 *buffer);
 void open_console();
 
+// Config file
+VOID *read_config_file(EFI_FILE_PROTOCOL *root);
+
 // Main
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable);
 

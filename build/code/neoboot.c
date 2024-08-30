@@ -534,6 +534,50 @@ void open_console() {
     }
 }
 
+// Read config file
+VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
+    EFI_FILE_PROTOCOL *config_file;
+    EFI_STATUS status;
+    CHAR16 *file_name = L"config.cfg";
+    UINTN buffer_size = 0;
+    VOID *buffer = NULL;
+
+    // Open the config file
+    status = uefi_call_wrapper(root->Open, 5, root, &config_file, file_name, EFI_FILE_MODE_READ, 0);
+    if (EFI_ERROR(status)) {
+        Print(L"Cannot open the config file\n");
+    }
+
+    // Get the config file size
+    status = uefi_call_wrapper(config_file->GetInfo, 4, config_file, &gEfiFileInfoGuid, &buffer_size, NULL);
+    if (status == EFI_BUFFER_TOO_SMALL) {
+        buffer = AllocatePool(buffer_size);
+        status = uefi_call_wrapper(config_file->GetInfo, 4, config_file, &gEfiFileInfoGuid, &buffer_size, buffer);
+        if (EFI_ERROR(status)) {
+            Print(L"Cannot get the config file size\n");
+        }
+    } else {
+        Print(L"Cannot determine file size\n");
+    }
+
+    // Read the file content
+    buffer_size = ((EFI_FILE_INFO *)buffer)->FileSize;
+    FreePool(buffer);
+    buffer = AllocatePool(buffer_size);
+    status = uefi_call_wrapper(config_file->Read, 3, config_file, &buffer_size, buffer);
+    if (EFI_ERROR(status)) {
+        Print(L"Cannot read the config file\n");
+    }
+
+    // Print
+    Print(L"Config file content : %s", buffer);
+
+    // Close the file
+    uefi_call_wrapper(config_file->Close, 1, config_file);
+
+    return buffer;
+}
+
 // Open the menu
 void open_menu() {
 
