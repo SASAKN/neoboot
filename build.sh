@@ -12,6 +12,9 @@ IMAGE_PATH="${BUILD_DIR}/neoboot.img"
 # ブートローダーパス
 LOADER_PATH="${BUILD_DIR}/loader.efi"
 
+# コンフィグファイルパス
+CONFIG_PATH="${BUILD_DIR}/loader.cfg"
+
 # ボリュームの名前
 VOLUME_NAME="NEOBOOT"
 
@@ -60,8 +63,11 @@ function make_image() {
     # ファイル構成の作成
     mkdir -p "/Volumes/${VOLUME_NAME}/EFI/BOOT"
 
-    # ファイルを追加
+    # ブートローダーファイルを追加
     cp "${LOADER_PATH}" "/Volumes/${VOLUME_NAME}/EFI/BOOT/BOOTX64.efi"
+
+    # コンフィグファイルを追加
+    cp "${CONFIG_PATH}" "/Volumes/${VOLUME_NAME}/config.cfg"
 
     # アンマウント
     hdiutil unmount "/Volumes/${VOLUME_NAME}" -force

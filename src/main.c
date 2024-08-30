@@ -698,6 +698,15 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         }
     }
 
+    // Open config file
+    EFI_FILE_PROTOCOL *config_files;
+    for (UINTN i = 0; i < no_of_bootable_disks; i++) {
+        status = uefi_call_wrapper(bootable_disks[i].root->Open, 5, bootable_disks[i].root, &config_files[i], L"\\config.cfg", EFI_FILE_MODE_READ, 0);
+        
+    }
+
+    
+
     // Open a menu
     open_menu();
 
