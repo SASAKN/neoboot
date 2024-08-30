@@ -538,7 +538,7 @@ void open_console() {
 VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
     EFI_FILE_PROTOCOL *config_file;
     EFI_STATUS status;
-    CHAR16 *file_name = L"config.cfg";
+    CHAR16 *file_name = L"\\config.cfg";
     UINTN buffer_size = 0;
     VOID *buffer = NULL;
 
@@ -569,8 +569,12 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
         Print(L"Cannot read the config file\n");
     }
 
+    // Add the NULL end
+    CHAR8 *char8_buffer = (CHAR8 *)buffer;
+    char8_buffer[buffer_size] = '\0';
+
     // Print
-    Print(L"Config file content : %s", buffer);
+    Print(L"%a", char8_buffer);
 
     // Close the file
     uefi_call_wrapper(config_file->Close, 1, config_file);
@@ -735,12 +739,16 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
             }
 
             status = uefi_call_wrapper(bootable_disks[i].root->GetInfo, 4, bootable_disks[i].root, &gEfiFileSystemInfoGuid, &buffer_size, fs_info);
+            read_config_file(bootable_disks[i].root);
             if (EFI_ERROR(status)) {
                 Print(L"Error cannnot get disk info\n");
                 while(1);
             }
         }
     }
+
+    // Stall
+    uefi_call_wrapper(BS->Stall, 1, 5000000);
 
     // Open a menu
     open_menu();
