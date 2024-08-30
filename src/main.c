@@ -536,6 +536,7 @@ void open_console() {
 
 // Read config file
 VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
+    
     EFI_FILE_PROTOCOL *config_file;
     EFI_STATUS status;
     CHAR16 *file_name = L"\\config.cfg";
