@@ -31,7 +31,8 @@ char *my_strchr(const char *str, int c) {
 
 // Strtok
 char *my_strtok(char *str, const char *delim) {
-    static char *next_token = NULL;
+
+    static char *next_token = NULL; // トークンを保存
     if (str == NULL) {
         str = next_token;
     }
@@ -40,7 +41,30 @@ char *my_strtok(char *str, const char *delim) {
         return NULL;
     }
 
-    while
+    while (*str && my_strchr(delim, *str)) {
+        str++;
+    }
+
+    if (*str == '\0') {
+        return NULL;
+    }
+
+    char *start = str; // トークンの開始位置を保存
+
+    // トークンの終端を探す
+    while( *str && !my_strchr(delim, str)) {
+        str++;
+    }
+
+    if (*str) {
+        *str = '\0';
+        next_token = str + 1; // 次の文字へ
+    } else {
+        next_token = NULL; // 次のトークンなし
+    }
+
+    return start;
+    
 }
 
 // AsciiSPrint
