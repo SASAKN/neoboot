@@ -787,6 +787,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Get info of bootable disks
     UINTN buffer_size = 0;
     EFI_FILE_SYSTEM_INFO *fs_info;
+    char *config_txt;
     for (UINTN i = 0; i < no_of_bootable_disks; i++) {
         status = uefi_call_wrapper(bootable_disks[i].root->GetInfo, 4, bootable_disks[i].root, &gEfiFileSystemInfoGuid, &buffer_size, NULL);
         if (status == EFI_BUFFER_TOO_SMALL) {
@@ -798,12 +799,31 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
             }
 
             status = uefi_call_wrapper(bootable_disks[i].root->GetInfo, 4, bootable_disks[i].root, &gEfiFileSystemInfoGuid, &buffer_size, fs_info);
-            read_config_file(bootable_disks[i].root);
+            config_txt = read_config_file(bootable_disks[i].root);
+
             if (EFI_ERROR(status)) {
                 Print(L"Error cannnot get disk info\n");
                 while(1);
             }
         }
+    }
+
+    // Split
+    char *config_token;
+    config_token = my_strtok(config_txt, "\n");
+
+    // Print first token
+    Print(L" Token : a\n", config_token);
+
+    // トークンがNULLになるまでループ
+    while(config_token != NULL) {
+
+        config_token = my_strtok(NULL, "\n");
+
+        if (config_token != NULL) {
+            Print(L" Token : a\n", config_token);
+        }
+
     }
 
     // Stall
