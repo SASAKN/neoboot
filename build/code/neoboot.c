@@ -9,6 +9,16 @@
 #include "config.h"
 #include "proto.h"
 
+// Strtok
+CHAR8 *strtok(char *s1, const char *s2) {
+
+    // １文字づつ探す
+    for (UINT32 i = 0; i < sizeof(s1); i++) {
+        
+    }
+
+}
+
 // AsciiSPrint
 UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...) {
     va_list marker;
@@ -536,6 +546,7 @@ void open_console() {
 
 // Read config file
 VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
+    
     EFI_FILE_PROTOCOL *config_file;
     EFI_STATUS status;
     CHAR16 *file_name = L"\\config.cfg";

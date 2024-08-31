@@ -9,6 +9,40 @@
 #include "config.h"
 #include "proto.h"
 
+// Strchr
+char *my_strchr(const char *str, int c) {
+
+    // 一文字づつ探す
+    while(*str != '\0') {
+        if (*str == (char)c) {
+            return (char *)str;
+        }
+        str++;
+    }
+
+    // 終端文字を探している場合
+    if (c == '\0') {
+        return (char *)str;
+    }
+
+    return NULL;
+
+}
+
+// Strtok
+char *my_strtok(char *str, const char *delim) {
+    static char *next_token = NULL;
+    if (str == NULL) {
+        str = next_token;
+    }
+
+    if (str == NULL) {
+        return NULL;
+    }
+
+    while
+}
+
 // AsciiSPrint
 UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...) {
     va_list marker;
