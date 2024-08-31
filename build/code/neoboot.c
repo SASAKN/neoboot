@@ -9,13 +9,61 @@
 #include "config.h"
 #include "proto.h"
 
-// Strtok
-CHAR8 *strtok(char *s1, const char *s2) {
+// Strchr
+char *my_strchr(const char *str, int c) {
 
-    // １文字づつ探す
-    for (UINT32 i = 0; i < sizeof(s1); i++) {
-        
+    // 一文字づつ探す
+    while(*str != '\0') {
+        if (*str == (char)c) {
+            return (char *)str;
+        }
+        str++;
     }
+
+    // 終端文字を探している場合
+    if (c == '\0') {
+        return (char *)str;
+    }
+
+    return NULL;
+
+}
+
+// Strtok
+char *my_strtok(char *str, const char *delim) {
+
+    static char *next_token = NULL; // トークンを保存
+    if (str == NULL) {
+        str = next_token;
+    }
+
+    if (str == NULL) {
+        return NULL;
+    }
+
+    while (*str && my_strchr(delim, *str)) {
+        str++;
+    }
+
+    if (*str == '\0') {
+        return NULL;
+    }
+
+    char *start = str; // トークンの開始位置を保存
+
+    // トークンの終端を探す
+    while( *str && !my_strchr(delim, *str)) {
+        str++;
+    }
+
+    if (*str) {
+        *str = '\0';
+        next_token = str + 1; // 次の文字へ
+    } else {
+        next_token = NULL; // 次のトークンなし
+    }
+
+    return start;
 
 }
 

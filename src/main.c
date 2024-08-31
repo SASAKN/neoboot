@@ -52,7 +52,7 @@ char *my_strtok(char *str, const char *delim) {
     char *start = str; // トークンの開始位置を保存
 
     // トークンの終端を探す
-    while( *str && !my_strchr(delim, str)) {
+    while( *str && !my_strchr(delim, *str)) {
         str++;
     }
 
@@ -64,7 +64,7 @@ char *my_strtok(char *str, const char *delim) {
     }
 
     return start;
-    
+
 }
 
 // AsciiSPrint
