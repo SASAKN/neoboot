@@ -632,9 +632,6 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
     CHAR8 *char8_buffer = (CHAR8 *)buffer;
     char8_buffer[buffer_size] = '\0';
 
-    // Print
-    Print(L"%a", char8_buffer);
-
     // Close the file
     uefi_call_wrapper(config_file->Close, 1, config_file);
 
@@ -800,7 +797,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
             status = uefi_call_wrapper(bootable_disks[i].root->GetInfo, 4, bootable_disks[i].root, &gEfiFileSystemInfoGuid, &buffer_size, fs_info);
             config_txt = read_config_file(bootable_disks[i].root);
-
             if (EFI_ERROR(status)) {
                 Print(L"Error cannnot get disk info\n");
                 while(1);
@@ -809,25 +805,27 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     }
 
     // Split
-    char *config_token;
-    config_token = my_strtok(config_txt, "\n");
+    
+    char *config_token[100];  // トークンの配列
+    UINT32 i = 0;
 
-    // Print first token
-    Print(L" Token : a\n", config_token);
+    // トークンを検索する
+    char *token = my_strtok(config_txt, "\n");
 
-    // トークンがNULLになるまでループ
-    while(config_token != NULL) {
-
-        config_token = my_strtok(NULL, "\n");
-
-        if (config_token != NULL) {
-            Print(L" Token : a\n", config_token);
-        }
-
+    while (token != NULL && i < 100) {
+        config_token[i] = token;  // トークンを保存
+        i++;
+        token = my_strtok(NULL, "\n");  // 次のトークンを検索
     }
 
+    // トークンを出力する
+    for (UINT32 j = 0; j < i; j++) {
+        Print(L"Token %d: %a\n", j, config_token[j]);
+    }
+
+
     // Stall
-    uefi_call_wrapper(BS->Stall, 1, 5000000);
+    uefi_call_wrapper(BS->Stall, 1, 10000000);
 
     // Open a menu
     open_menu();
