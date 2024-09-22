@@ -58,7 +58,7 @@ function make_image() {
     mv "${IMAGE_PATH}.cdr" "${IMAGE_PATH}"
 
     # マウント
-    hdiutil mount "${IMAGE_PATH}"
+    hdiutil attach "${IMAGE_PATH}" -mountpoint /Volumes/${VOLUME_NAME}
 
     # ファイル構成の作成
     mkdir -p "/Volumes/${VOLUME_NAME}/EFI/BOOT"
