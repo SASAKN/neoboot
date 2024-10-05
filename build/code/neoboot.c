@@ -68,6 +68,31 @@ char *my_strtok(char *str, const char *delim) {
 
 }
 
+// Split
+char **split(char *txt, const char *delimiter) {
+
+    // Array of tokens
+    char **tokens = AllocatePool(100 * sizeof(char));
+    if (tokens == NULL) {
+        return NULL;
+    }
+
+    UINT32 i = 0;
+
+    // Find a first token by strtok
+    char *token = my_strtok(txt, ",");
+
+    // Copy tokens from text to array
+    while (token != NULL && i < 100) {
+        tokens[i] = token;
+        i++;
+        token = my_strtok(NULL, ",");
+    }
+
+    // Return
+    return tokens;
+}
+
 // AsciiSPrint
 UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...) {
     va_list marker;
@@ -805,25 +830,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         }
     }
 
-    // Split every tokens
-    
-    char *config_token[100];  // トークンの配列
-    UINT32 i = 0;
-
-    // トークンを検索する
-    char *token = my_strtok(config_txt, ",");
-
-    while (token != NULL && i < 100) {
-        config_token[i] = token;  // トークンを保存
-        i++;
-        token = my_strtok(NULL, ",");  // 次のトークンを検索
+    char **config_tokens = split(config_txt, ",");
+    for (int i = 0; config_tokens[i] != NULL; i++) {
+        Print(L"Token %d : %a\n", i, config_tokens[i]);
     }
-
-    // トークンを出力する
-    for (UINT32 j = 0; j < i; j++) {
-        Print(L"Token %d: %a\n", j, config_token[j]);
-    }
-
 
     // Stall
     uefi_call_wrapper(BS->Stall, 1, 10000000);
