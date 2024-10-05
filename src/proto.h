@@ -19,6 +19,7 @@ UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...
 CHAR16 *add_spaces_around_text(const CHAR16 *text, UINTN num_spaces);
 char *my_strtok(char *str, const char *delim);
 char *my_strchr(const char *str, int c);
+char *my_strdup(const char *s);
 char **split(char *txt, const char *delimiter, int *count);
 
 // Memorymap

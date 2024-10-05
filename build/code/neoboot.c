@@ -838,7 +838,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     // Count
     int count = 0;
-    int sub_count;
+    int sub_count = 0;
 
     char **config_tokens;
     char **sub_config_tokens;
@@ -846,10 +846,27 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Split by ","
     config_tokens = split(config_txt, ",", &count);
 
-    // ","で分割したものを"="で分割
     for (int i = 0; i < count; i++) {
-        sub_config_tokens = split(config_tokens[i], "=", &sub_count);
+        char *token = config_tokens[i];
+
+        // Split each token by "="
+        sub_config_tokens = split(token, "=", &sub_count);
+
+        // Check if we have a valid key-value pair
+        if (sub_count == 2) {
+            // Print
+            Print(L"Key: %a, Value: %a\n", sub_config_tokens[0], sub_config_tokens[1]);
+        } else {
+            Print(L"Invalid token: %a\n", token);
+        }
+
+        // Free the memory allocated for sub_config_tokens
+        FreePool(sub_config_tokens);
     }
+
+    // Free the memory allocated for config_tokens
+    FreePool(config_tokens);
+
 
 
     

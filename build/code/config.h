@@ -3,6 +3,16 @@
 #define _CONFIG_H
 #include <efi.h>
 
+// コンフィグファイル
+typedef struct _MENU_CONFIG_FILE {
+
+    // コンフィグファイルのキー
+    char **keys;
+
+    // その値
+    char **values;
+} ConFile;
+
 // エントリー
 typedef struct _OS_MENU_ENTRY {
 

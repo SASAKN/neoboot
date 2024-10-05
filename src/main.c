@@ -29,6 +29,30 @@ char *my_strchr(const char *str, int c) {
 
 }
 
+// Strdup
+char *my_strdup(const char *s) {
+
+    // Caluclate size of string
+    int len = 0;
+    while (s[len] != '\0') {
+        len++;
+    }
+
+    // Reserve memory
+    char *dup = (char *)AllocatePool(len + 1);
+    if (dup == NULL) {
+        return NULL;
+    }
+
+    // Copy string
+    for (int i = 0; i < len; i++) {
+        dup[i] = s[i];
+    }
+    dup[len] = '\0'; // NULL終端
+
+    return dup;
+}
+
 // Strtok
 char *my_strtok(char *str, const char *delim) {
 
@@ -847,15 +871,26 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     config_tokens = split(config_txt, ",", &count);
 
     for (int i = 0; i < count; i++) {
-        char *token = config_tokens[i];
+        char *token = ;
 
         // Split each token by "="
         sub_config_tokens = split(token, "=", &sub_count);
 
-        // Print
-        Print(L"Key : %a, Value %s\n", sub_config_tokens[0], sub_config_tokens[1]);
-        
+        // Check if we have a valid key-value pair
+        if (sub_count == 2) {
+            // Print
+            Print(L"Key: %a, Value: %a\n", sub_config_tokens[0], sub_config_tokens[1]);
+        } else {
+            Print(L"Invalid token: %a\n", token);
+        }
+
+        // Free the memory allocated for sub_config_tokens
+        FreePool(sub_config_tokens);
     }
+
+    // Free the memory allocated for config_tokens
+    FreePool(config_tokens);
+
 
 
     
