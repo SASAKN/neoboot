@@ -836,11 +836,11 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         }
     }
 
-    char **config_tokens = split(config_txt, ",");
-    int i = 0;
-    while (config_tokens[i] != NULL) {
+    int count = 0;
+    char **config_tokens = split(config_txt, ",", &count);
+
+    for (int i = 0; i < count; i++) {
         Print(L"Token %d : %a\n", i, config_tokens[i]);
-        i++;
     }
 
     // Stall
