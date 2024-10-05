@@ -11,4 +11,3 @@ OVMF.fd
 *.dmg
 test.py
 *.img.cdr
-build/code/neoboot.c
