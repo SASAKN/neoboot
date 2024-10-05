@@ -33,6 +33,7 @@ char *my_strchr(const char *str, int c) {
 char *my_strtok(char *str, const char *delim) {
 
     static char *next_token = NULL; // トークンを保存
+    
     if (str == NULL) {
         str = next_token;
     }
@@ -804,18 +805,18 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         }
     }
 
-    // Split
+    // Split every tokens
     
     char *config_token[100];  // トークンの配列
     UINT32 i = 0;
 
     // トークンを検索する
-    char *token = my_strtok(config_txt, "\n");
+    char *token = my_strtok(config_txt, ",");
 
     while (token != NULL && i < 100) {
         config_token[i] = token;  // トークンを保存
         i++;
-        token = my_strtok(NULL, "\n");  // 次のトークンを検索
+        token = my_strtok(NULL, ",");  // 次のトークンを検索
     }
 
     // トークンを出力する

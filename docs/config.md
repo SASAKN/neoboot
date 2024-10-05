@@ -20,7 +20,7 @@ flags=BOOT_FLAGS,
 
 ``
 
-#### Explationations of Parameters
+#### Explanations of Parameters
 
 ##### Required Parameters
 

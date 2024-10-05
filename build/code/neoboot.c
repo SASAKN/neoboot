@@ -810,12 +810,12 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     UINT32 i = 0;
 
     // トークンを検索する
-    char *token = my_strtok(config_txt, "\n");
+    char *token = my_strtok(config_txt, ",");
 
     while (token != NULL && i < 100) {
         config_token[i] = token;  // トークンを保存
         i++;
-        token = my_strtok(NULL, "\n");  // 次のトークンを検索
+        token = my_strtok(NULL, ",");  // 次のトークンを検索
     }
 
     // トークンを出力する
