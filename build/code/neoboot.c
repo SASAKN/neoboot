@@ -33,6 +33,7 @@ char *my_strchr(const char *str, int c) {
 char *my_strtok(char *str, const char *delim) {
 
     static char *next_token = NULL; // トークンを保存
+    
     if (str == NULL) {
         str = next_token;
     }
@@ -804,7 +805,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         }
     }
 
-    // Split
+    // Split every tokens
     
     char *config_token[100];  // トークンの配列
     UINT32 i = 0;
