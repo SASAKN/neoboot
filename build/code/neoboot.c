@@ -831,9 +831,11 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     }
 
     char **config_tokens = split(config_txt, ",");
-    for (int i = 0; config_tokens[i] != NULL; i++) {
-        Print(L"Token %d : %a\n", i, config_tokens[i]);
-    }
+    // int i = 0;
+    // while (config_tokens[i] != NULL) {
+    //     Print(L"Token %d : %a\n", i, config_tokens[i]);
+    //     i++;
+    // }
 
     // Stall
     uefi_call_wrapper(BS->Stall, 1, 10000000);

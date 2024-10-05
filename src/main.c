@@ -69,7 +69,7 @@ char *my_strtok(char *str, const char *delim) {
 }
 
 // Split
-char **split(char *txt, const char *delimiter) {
+char **split(char *txt, const char *delimiter, int *count) {
 
     // Array of tokens
     char **tokens = AllocatePool(100 * sizeof(char));
@@ -88,6 +88,12 @@ char **split(char *txt, const char *delimiter) {
         i++;
         token = my_strtok(NULL, ",");
     }
+
+    // NULL terminate the array of tokens
+    tokens[i] = NULL;
+
+    // Set count
+    *count = i;
 
     // Return
     return tokens;
@@ -831,8 +837,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     }
 
     char **config_tokens = split(config_txt, ",");
-    for (int i = 0; config_tokens[i] != NULL; i++) {
+    int i = 0;
+    while (config_tokens[i] != NULL) {
         Print(L"Token %d : %a\n", i, config_tokens[i]);
+        i++;
     }
 
     // Stall
