@@ -15,6 +15,8 @@
 // Functions
 
 // String
+unsigned int my_strlen(const char *str);
+char *my_strcpy(char *dest, const char *src);
 UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...);
 CHAR16 *add_spaces_around_text(const CHAR16 *text, UINTN num_spaces);
 char *my_strtok(char *str, const char *delim);
@@ -22,6 +24,7 @@ char *my_strchr(const char *str, int c);
 char *my_strdup(const char *s);
 void split_key_value(char *str, char **key, char **value);
 char **split(char *txt, const char *delimiter, int *count);
+Config *config_file_parser(char *config_txt);
 
 // Memorymap
 const CHAR16 *get_memtype(EFI_MEMORY_TYPE type);

@@ -9,6 +9,34 @@
 #include "config.h"
 #include "proto.h"
 
+// Strlen
+unsigned int my_strlen(const char *str) {
+
+    unsigned int str_size = 0;
+
+    while(*str != '\0') {
+        str++;
+        str_size++;
+    }
+
+    return str_size;
+}
+
+// Strcpy
+char *my_strcpy(char *dest, const char *src) {
+    char *original_dest = dest;
+
+    while (*src) {
+        *dest = *src;
+        dest++;
+        src++;
+    }
+
+    *dest = '\0';
+
+    return original_dest;
+}
+
 // Strchr
 char *my_strchr(const char *str, int c) {
 
@@ -184,6 +212,52 @@ CHAR16 *add_spaces_around_text(const CHAR16 *text, UINTN num_spaces) {
 
     return new_text;
 }
+
+// Config file Parser
+Config *config_file_parser(char *config_txt) {
+    char **lines;
+    int count;
+    Config *config = AllocatePool(sizeof(config));
+
+    // Split by ","
+    lines = split(config_txt, ",", &count);
+
+    config->keys = AllocatePool(sizeof(char *) * count);
+    config->values = AllocatePool(sizeof(char *) * count);
+
+    for (int i = 0; i < count; i++) {
+
+        char *key, *value = NULL;
+        unsigned int key_size, value_size = 0;
+        Print(L"%a\n", lines[i]);
+
+        // Split by "="
+        split_key_value(lines[i], &key, &value);
+        Print(L"%a, %a\n", key, value);
+
+        // Strlen
+        key_size = my_strlen(key) + 1;
+        value_size = my_strlen(value) + 1;
+
+        // Allocate each elements
+        config->keys[i] = AllocatePool(20);
+        config->values[i] = AllocatePool(20);
+
+        // Copy to arrays
+        my_strcpy(config->keys[i], key);
+        my_strcpy(config->values[i], value);
+    }
+
+    // Free
+    FreePool(lines);
+
+    // Final
+    config->num_keys = count;
+
+    // Return
+    return config;
+
+};
 
 // Get memory type
 const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
@@ -879,31 +953,35 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         }
     }
 
-    char **lines;
-    int count;
+    // char **lines;
+    // int count;
 
-    // ,で分割
-    lines = split(config_txt, ",", &count);
+    // // ,で分割
+    // lines = split(config_txt, ",", &count);
     
-    char *keys[count];
-    char *values[count];
-    for (int i = 0; i < count; i++) {
-        // Split
-        char *key = NULL;
-        char *value = NULL;
-        split_key_value(lines[i], &key, &value);
+    // char *keys[count];
+    // char *values[count];
+    // for (int i = 0; i < count; i++) {
+    //     // Split
+    //     char *key = NULL;
+    //     char *value = NULL;
+    //     split_key_value(lines[i], &key, &value);
 
-        // Add to arrays
-        keys[i] = key;
-        values[i] = value;
-    }
+    //     // Add to arrays
+    //     keys[i] = key;
+    //     values[i] = value;
+    // }
+
+    // FreePool(lines); // メモリの解放
+
+    // Parse the config file
+    Config *config = config_file_parser(config_txt);
 
     Print(L"\nKey, Value\n");
-    for (int i = 0; i < count; i++) {
-        Print(L"%a, %a\n", keys[i], values[i]);
+    for (int i = 0; i < config->num_keys; i++) {
+        Print(L"%a, %a\n", config->keys[i], config->values[i]);
     }
 
-    FreePool(lines); // メモリの解放
     
 
     // Stall
