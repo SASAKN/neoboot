@@ -32,9 +32,9 @@ char *my_strchr(const char *str, int c) {
 void split_key_value(char *str, char **key, char **value) {
     char *eq = my_strchr(str, '=');
     if (eq) {
-        *eq = '\0'; // = を NULL で置き換え
-        *key = str; // キー
-        *value = eq + 1; // バリュー
+        *eq = '\0';
+        *key = str;
+        *value = eq + 1;
     } else {
         *key = NULL;
         *value = NULL;
@@ -97,6 +97,12 @@ char *my_strtok(char *str, const char *delim) {
     if (*str) {
         *str = '\0';
         next_token = str + 1; // 次の文字へ
+        
+        // This does NOT have in original C library
+        if (delim == ",") {
+            next_token = str + 2;
+        }
+
     } else {
         next_token = NULL; // 次のトークンなし
     }
@@ -876,7 +882,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     char **lines;
     int count;
 
-    // 改行で分割
+    // ,で分割
     lines = split(config_txt, ",", &count);
     
     char *keys[count];

@@ -97,6 +97,12 @@ char *my_strtok(char *str, const char *delim) {
     if (*str) {
         *str = '\0';
         next_token = str + 1; // 次の文字へ
+        
+        // This does NOT have in original C library
+        if (delim == ",") {
+            next_token = str + 2;
+        }
+
     } else {
         next_token = NULL; // 次のトークンなし
     }
