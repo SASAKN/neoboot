@@ -100,7 +100,7 @@ char *my_strtok(char *str, const char *delim) {
         
         // This does NOT have in original C library
         if (delim == ",") {
-            next_token = str + 2;
+            next_token = str + 2; // Ignore "\n" after ","
         }
 
     } else {
