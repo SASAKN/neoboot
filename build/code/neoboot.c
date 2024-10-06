@@ -29,6 +29,43 @@ char *my_strchr(const char *str, int c) {
 
 }
 
+void split_key_value(char *str, char **key, char **value) {
+    char *eq = my_strchr(str, '=');
+    if (eq) {
+        *eq = '\0'; // = を NULL で置き換え
+        *key = str; // キー
+        *value = eq + 1; // バリュー
+    } else {
+        *key = NULL;
+        *value = NULL;
+    }
+}
+
+
+// Strdup
+char *my_strdup(const char *s) {
+
+    // Caluclate size of string
+    int len = 0;
+    while (s[len] != '\0') {
+        len++;
+    }
+
+    // Reserve memory
+    char *dup = (char *)AllocatePool(len + 1);
+    if (dup == NULL) {
+        return NULL;
+    }
+
+    // Copy string
+    for (int i = 0; i < len; i++) {
+        dup[i] = s[i];
+    }
+    dup[len] = '\0'; // NULL終端
+
+    return dup;
+}
+
 // Strtok
 char *my_strtok(char *str, const char *delim) {
 
@@ -836,39 +873,31 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
         }
     }
 
-    // Count
-    int count = 0;
-    int sub_count = 0;
+    char **lines;
+    int count;
 
-    char **config_tokens;
-    char **sub_config_tokens;
-
-    // Split by ","
-    config_tokens = split(config_txt, ",", &count);
-
+    // 改行で分割
+    lines = split(config_txt, ",", &count);
+    
+    char *keys[count];
+    char *values[count];
     for (int i = 0; i < count; i++) {
-        char *token = config_tokens[i];
+        // Split
+        char *key = NULL;
+        char *value = NULL;
+        split_key_value(lines[i], &key, &value);
 
-        // Split each token by "="
-        sub_config_tokens = split(token, "=", &sub_count);
-
-        // Check if we have a valid key-value pair
-        if (sub_count == 2) {
-            // Print
-            Print(L"Key: %a, Value: %a\n", sub_config_tokens[0], sub_config_tokens[1]);
-        } else {
-            Print(L"Invalid token: %a\n", token);
-        }
-
-        // Free the memory allocated for sub_config_tokens
-        FreePool(sub_config_tokens);
+        // Add to arrays
+        keys[i] = key;
+        values[i] = value;
     }
 
-    // Free the memory allocated for config_tokens
-    FreePool(config_tokens);
+    Print(L"\nKey, Value\n");
+    for (int i = 0; i < count; i++) {
+        Print(L"%a, %a\n", keys[i], values[i]);
+    }
 
-
-
+    FreePool(lines); // メモリの解放
     
 
     // Stall
