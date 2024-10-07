@@ -229,11 +229,9 @@ Config *config_file_parser(char *config_txt) {
 
         char *key, *value = NULL;
         unsigned int key_size, value_size = 0;
-        Print(L"%a\n", lines[i]);
 
         // Split by "="
         split_key_value(lines[i], &key, &value);
-        Print(L"%a, %a\n", key, value);
 
         // Strlen
         key_size = my_strlen(key) + 1;
