@@ -673,6 +673,8 @@ void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries) {
 
 // コマンドの判別
 void determine_command(CHAR16 *buffer) {
+
+    // コマンドを実行
     if ( StrCmp(buffer, L"help") == 0) {
 
         // Shows help
@@ -681,16 +683,20 @@ void determine_command(CHAR16 *buffer) {
     } else if (StrCmp(buffer, L"menu") == 0 ) {
         // Back to the menu
         open_menu();
+    } else if (StrCmp(buffer, L"") == 0) {
+        Print(L"\nneoboot >");
+        return;
     } else {
         Print(L"\nUnknown Command : %s", buffer);
     }
 
     // コンソールの表示
     Print(L"\nneoboot >");
+    return;
+
 }
 
 // Open the console
-// コンソールの実装 1h
 void open_console() {
 
     EFI_STATUS status;
@@ -705,7 +711,7 @@ void open_console() {
     Print(L"neoboot > ");
 
     // Buffer
-    CHAR16 buffer[1000]; // コマンドは1000文字以内
+    CHAR16 buffer[100]; // コマンドは100文字以内
     UINT32 buffer_index = 0;
 
     // Main Loop
@@ -950,27 +956,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
             }
         }
     }
-
-    // char **lines;
-    // int count;
-
-    // // ,で分割
-    // lines = split(config_txt, ",", &count);
-    
-    // char *keys[count];
-    // char *values[count];
-    // for (int i = 0; i < count; i++) {
-    //     // Split
-    //     char *key = NULL;
-    //     char *value = NULL;
-    //     split_key_value(lines[i], &key, &value);
-
-    //     // Add to arrays
-    //     keys[i] = key;
-    //     values[i] = value;
-    // }
-
-    // FreePool(lines); // メモリの解放
 
     // Parse the config file
     Config *config = config_file_parser(config_txt);
