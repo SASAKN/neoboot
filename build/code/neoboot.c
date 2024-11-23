@@ -758,7 +758,6 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
     status = uefi_call_wrapper(root->Open, 5, root, &config_file, file_name, EFI_FILE_MODE_READ, 0);
     if (EFI_ERROR(status)) {
         Print(L"Cannot open the config file\n");
-        return NULL;
     }
 
     // Get the config file size
@@ -932,15 +931,14 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     // Get pointers of bootable disks
     struct bootable_disk_info *bootable_disks;
-    UINTN tmp_no_of_bootable_disks;
-    list_bootable_disk(&bootable_disks, &tmp_no_of_bootable_disks);
+    UINTN no_of_bootable_disks;
+    list_bootable_disk(&bootable_disks, &no_of_bootable_disks);
 
     // Get info of bootable disks
     UINTN buffer_size = 0;
     EFI_FILE_SYSTEM_INFO *fs_info;
     char *config_txt;
-    int num_bootable_disks = tmp_no_of_bootable_disks;
-    for (UINTN i = 0; i < tmp_no_of_bootable_disks; i++) {
+    for (UINTN i = 0; i < no_of_bootable_disks; i++) {
         status = uefi_call_wrapper(bootable_disks[i].root->GetInfo, 4, bootable_disks[i].root, &gEfiFileSystemInfoGuid, &buffer_size, NULL);
         if (status == EFI_BUFFER_TOO_SMALL) {
 
@@ -956,21 +954,15 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
                 Print(L"Error cannnot get disk info\n");
                 while(1);
             }
-            if (config_txt == NULL) {
-                num_bootable_disks--;
-            }
         }
     }
 
-    // Parse the config files
-    Config **config = AllocatePool(sizeof(Config*) * num_bootable_disks);
-    for (int i = 0; i < num_bootable_disks; i++) {
-        config[i] = config_file_parser(config_txt);
+    // Parse the config file
+    Config *config = config_file_parser(config_txt);
 
-        Print(L"\nKey, Value\n");
-        for (int i = 0; i < config[i]->num_keys; i++) {
-            Print(L"%a, %a\n", config[i]->keys[i], config[i]->values[i]);
-        }
+    Print(L"\nKey, Value\n");
+    for (int i = 0; i < config->num_keys; i++) {
+        Print(L"%a, %a\n", config->keys[i], config->values[i]);
     }
 
     // Stall
