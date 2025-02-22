@@ -943,6 +943,11 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     VOID *config_txt = read_config_file(esp_root);
     Config *config = config_file_parser(config_txt);
 
+    Print(L"\nKey, Value\n");
+    for (int i = 0; i < config->num_keys; i++) {
+        Print(L"%a, %a\n", config->keys[i], config->values[i]);
+    }
+
     // Get memory map
     memmap map;
     map.buffer = LibMemoryMap(&map.entry, &map.map_key, &map.desc_size, &map.desc_ver);
