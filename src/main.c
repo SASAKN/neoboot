@@ -982,8 +982,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     Print(L"\nKey, Value\n");
     for (int i = 0; i < config->num_keys; i++) {
         Print(L"%a, %a\n", config->keys[i], config->values[i]);
-    }
-
+    };
 
     // Stall
     uefi_call_wrapper(BS->Stall, 1, 10000000);
