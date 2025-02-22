@@ -939,6 +939,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_FILE_HANDLE esp_root;
     esp_root = LibOpenRoot(lip->DeviceHandle);
 
+    // Open config file
+    VOID *config_txt = read_config_file(esp_root);
+    Config *config = config_file_parser(config_txt);
+
     // Get memory map
     memmap map;
     map.buffer = LibMemoryMap(&map.entry, &map.map_key, &map.desc_size, &map.desc_ver);
@@ -947,39 +951,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Save memory map
     EFI_FILE_PROTOCOL *memmap_file = NULL;
     save_memmap(&map, memmap_file, esp_root);
-
-    // Get pointers of bootable disks
-    struct bootable_disk_info *bootable_disks;
-    UINTN no_of_bootable_disks;
-    list_bootable_disk(&bootable_disks, &no_of_bootable_disks);
-
-    // Get info of bootable disks
-    UINTN buffer_size = 0;
-    EFI_FILE_SYSTEM_INFO *fs_info;
-    char *config_txt;
-    for (UINTN i = 0; i < no_of_bootable_disks; i++) {
-        status = uefi_call_wrapper(bootable_disks[i].root->GetInfo, 4, bootable_disks[i].root, &gEfiFileSystemInfoGuid, &buffer_size, NULL);
-        if (status == EFI_BUFFER_TOO_SMALL) {
-
-            fs_info = AllocateZeroPool(buffer_size);
-            if (fs_info == NULL) {
-                Print(L"Unknown Error Buffer cannot be allocated\n");
-                while(1);
-            }
-
-            status = uefi_call_wrapper(bootable_disks[i].root->GetInfo, 4, bootable_disks[i].root, &gEfiFileSystemInfoGuid, &buffer_size, fs_info);
-            config_txt = read_config_file(bootable_disks[i].root);
-            if (EFI_ERROR(status)) {
-                Print(L"Error cannnot get disk info\n");
-                while(1);
-            }
-        }
-    }
-
-    // Parse the config file
-    Config *config = config_file_parser(config_txt);
-
-
 
     // Stall
     uefi_call_wrapper(BS->Stall, 1, 10000000);
