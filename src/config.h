@@ -21,7 +21,7 @@ typedef struct _MENU_CONFIG_FILE {
 typedef struct _OS_MENU_ENTRY {
 
     // OSの名前
-    CHAR16 *os_name; 
+    CHAR16 *os_name;
 
     // 選択されているか
     BOOLEAN is_selected;

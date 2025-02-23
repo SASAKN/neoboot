@@ -15,6 +15,7 @@
 // Functions
 
 // String
+CHAR16 *atou(CHAR8 *str);
 unsigned int my_strlen(const char *str);
 char *my_strcpy(char *dest, const char *src);
 UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...);
@@ -44,7 +45,7 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
 void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c);
 void modify_an_entry_order(entries_list *list_entries, UINT32 new_entry_order);
 void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries);
-void open_menu(Config *con);
+void open_menu(Config **con);
 
 // Console
 void determine_command(CHAR16 *buffer);

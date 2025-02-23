@@ -9,6 +9,25 @@
 #include "config.h"
 #include "proto.h"
 
+// Ascii To Unicode
+CHAR16 *atou(CHAR8 *str) {
+    if (!str) return NULL; 
+
+    UINTN len = my_strlen(str); 
+    CHAR16 *buffer = AllocatePool((len + 1) * sizeof(CHAR16)); 
+    if (!buffer) return NULL;  
+
+    CHAR16 *ptr = buffer; 
+
+    while (*str) {
+        *ptr++ = (CHAR16)*str++; 
+    }
+    *ptr = L'\0';
+
+    return buffer;
+}
+
+
 // Strlen
 unsigned int my_strlen(const char *str) {
 
@@ -792,7 +811,7 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
 }
 
 // Open the menu
-void open_menu(Config *con) {
+void open_menu(Config **con) {
 
     EFI_STATUS status;
     UINTN c, r;
@@ -800,7 +819,7 @@ void open_menu(Config *con) {
     UINTN length;
     UINT32 selected_index = 0; // デフォルトで0が選択される
     static int count_opened = 0;
-    static Config *config = NULL;
+    static Config **config = NULL;
 
     // ユーザーがメニューを開いた回数を記録
     count_opened += 1;
@@ -809,7 +828,7 @@ void open_menu(Config *con) {
     if (count_opened = 1) {
 
         // 1回目にNULLであれば
-        if (con = NULL) {
+        if (*con = NULL) {
             Print(L"[FATAL ERROR] Could not open the menu");
             return;
         }
@@ -847,11 +866,15 @@ void open_menu(Config *con) {
     // Init entries list
     list_entries = init_entries_list();
 
-    // Add entries
-    add_a_entry(L"OS 1", &list_entries);
-    add_a_entry(L"OS 2", &list_entries);
-    add_a_entry(L"OS 3", &list_entries);
-    add_a_entry(L"OS 4", &list_entries);
+    // Add a entry
+    Print(L"init");
+    for (int i = 0; i < (*config)->num_keys; i++) {
+        Print(L"loop");
+        // if (StrCmp(atou(config->keys[i]), L"kernel") == 0) {
+            Print(L"[debug] %s\n", atou((*config)->values[i]));
+            // add_a_entry(atou(config->values[i]), &list_entries);
+        // }
+    }
 
     // Print entries
     print_entries(list_entries, &pos_x, &pos_y, c);
@@ -948,48 +971,20 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_FILE_PROTOCOL *memmap_file = NULL;
     save_memmap(&map, memmap_file, esp_root);
 
-    // Get pointers of bootable disks
-    struct bootable_disk_info *bootable_disks;
-    UINTN no_of_bootable_disks;
-    list_bootable_disk(&bootable_disks, &no_of_bootable_disks);
-
-    // Get info of bootable disks
-    UINTN buffer_size = 0;
-    EFI_FILE_SYSTEM_INFO *fs_info;
-    char *config_txt;
-    for (UINTN i = 0; i < no_of_bootable_disks; i++) {
-        status = uefi_call_wrapper(bootable_disks[i].root->GetInfo, 4, bootable_disks[i].root, &gEfiFileSystemInfoGuid, &buffer_size, NULL);
-        if (status == EFI_BUFFER_TOO_SMALL) {
-
-            fs_info = AllocateZeroPool(buffer_size);
-            if (fs_info == NULL) {
-                Print(L"Unknown Error Buffer cannot be allocated\n");
-                while(1);
-            }
-
-            status = uefi_call_wrapper(bootable_disks[i].root->GetInfo, 4, bootable_disks[i].root, &gEfiFileSystemInfoGuid, &buffer_size, fs_info);
-            config_txt = read_config_file(bootable_disks[i].root);
-            if (EFI_ERROR(status)) {
-                Print(L"Error cannnot get disk info\n");
-                while(1);
-            }
-        }
-    }
-
-    // Parse the config file
+    // Open config file
+    char *config_txt = read_config_file(esp_root);
     Config *config = config_file_parser(config_txt);
-
+    
     Print(L"\nKey, Value\n");
     for (int i = 0; i < config->num_keys; i++) {
         Print(L"%a, %a\n", config->keys[i], config->values[i]);
     }
 
-
     // Stall
     uefi_call_wrapper(BS->Stall, 1, 10000000);
 
     // Open a menu
-    open_menu(config);
+    open_menu(&config);
 
     // Free up memory
     FreePool(map.buffer);
@@ -997,7 +992,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // End timer
     uefi_call_wrapper(RT->GetTime, 2, &end_time, NULL);
     UINTN end_time_second = 0;
-
+ 
     // 分が違う場合
     end_time_second += (end_time.Minute - start_time.Minute) * 60;
 

@@ -9,6 +9,25 @@
 #include "config.h"
 #include "proto.h"
 
+// Ascii To Unicode
+CHAR16 *atou(CHAR8 *str) {
+    if (!str) return NULL; 
+
+    UINTN len = my_strlen(str); 
+    CHAR16 *buffer = AllocatePool((len + 1) * sizeof(CHAR16)); 
+    if (!buffer) return NULL;  
+
+    CHAR16 *ptr = buffer; 
+
+    while (*str) {
+        *ptr++ = (CHAR16)*str++; 
+    }
+    *ptr = L'\0';
+
+    return buffer;
+}
+
+
 // Strlen
 unsigned int my_strlen(const char *str) {
 
@@ -792,7 +811,7 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
 }
 
 // Open the menu
-void open_menu(Config *con) {
+void open_menu(Config **con) {
 
     EFI_STATUS status;
     UINTN c, r;
@@ -800,7 +819,7 @@ void open_menu(Config *con) {
     UINTN length;
     UINT32 selected_index = 0; // デフォルトで0が選択される
     static int count_opened = 0;
-    static Config *config = NULL;
+    static Config **config = NULL;
 
     // ユーザーがメニューを開いた回数を記録
     count_opened += 1;
@@ -809,7 +828,7 @@ void open_menu(Config *con) {
     if (count_opened = 1) {
 
         // 1回目にNULLであれば
-        if (con = NULL) {
+        if (*con = NULL) {
             Print(L"[FATAL ERROR] Could not open the menu");
             return;
         }
@@ -847,11 +866,15 @@ void open_menu(Config *con) {
     // Init entries list
     list_entries = init_entries_list();
 
-    // Add entries
-    add_a_entry(L"OS 1", &list_entries);
-    add_a_entry(L"OS 2", &list_entries);
-    add_a_entry(L"OS 3", &list_entries);
-    add_a_entry(L"OS 4", &list_entries);
+    // Add a entry
+    Print(L"init");
+    for (int i = 0; i < (*config)->num_keys; i++) {
+        Print(L"loop");
+        // if (StrCmp(atou(config->keys[i]), L"kernel") == 0) {
+            Print(L"[debug] %s\n", atou((*config)->values[i]));
+            // add_a_entry(atou(config->values[i]), &list_entries);
+        // }
+    }
 
     // Print entries
     print_entries(list_entries, &pos_x, &pos_y, c);
@@ -939,15 +962,6 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_FILE_HANDLE esp_root;
     esp_root = LibOpenRoot(lip->DeviceHandle);
 
-    // Open config file
-    VOID *config_txt = read_config_file(esp_root);
-    Config *config = config_file_parser(config_txt);
-
-    Print(L"\nKey, Value\n");
-    for (int i = 0; i < config->num_keys; i++) {
-        Print(L"%a, %a\n", config->keys[i], config->values[i]);
-    }
-
     // Get memory map
     memmap map;
     map.buffer = LibMemoryMap(&map.entry, &map.map_key, &map.desc_size, &map.desc_ver);
@@ -957,11 +971,20 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     EFI_FILE_PROTOCOL *memmap_file = NULL;
     save_memmap(&map, memmap_file, esp_root);
 
+    // Open config file
+    char *config_txt = read_config_file(esp_root);
+    Config *config = config_file_parser(config_txt);
+    
+    Print(L"\nKey, Value\n");
+    for (int i = 0; i < config->num_keys; i++) {
+        Print(L"%a, %a\n", config->keys[i], config->values[i]);
+    }
+
     // Stall
     uefi_call_wrapper(BS->Stall, 1, 10000000);
 
     // Open a menu
-    open_menu(config);
+    open_menu(&config);
 
     // Free up memory
     FreePool(map.buffer);
