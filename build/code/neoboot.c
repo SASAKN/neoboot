@@ -701,7 +701,7 @@ void determine_command(CHAR16 *buffer) {
 
     } else if (StrCmp(buffer, L"menu") == 0 ) {
         // Back to the menu
-        open_menu((void 0));
+        open_menu(NULL);
     } else if (StrCmp(buffer, L"") == 0) {
         Print(L"\nneoboot >");
         return;
@@ -750,7 +750,7 @@ void open_console() {
                 buffer_index++;
                 
             } else if (key.ScanCode == SCAN_ESC) {
-                open_menu();
+                open_menu(NULL);
             } else {
                 
                 buffer[buffer_index] = '\0'; // コマンドの終端
@@ -811,7 +811,7 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
 }
 
 // Open the menu
-void open_menu(Config con) {
+void open_menu(Config *con) {
 
     EFI_STATUS status;
     UINTN c, r;
@@ -819,16 +819,16 @@ void open_menu(Config con) {
     UINTN length;
     UINT32 selected_index = 0; // デフォルトで0が選択される
     static int count_opened = 0;
-    static Config config;
+    static Config *config = NULL;
 
     // ユーザーがメニューを開いた回数を記録
     count_opened += 1;
     
     // メニューを開いた回数によって動作を変える
-    if (count_opened = 1) {
+    if (count_opened == 1) {
 
         // 1回目にNULLであれば
-        if (*con = NULL) {
+        if (con == NULL) {
             Print(L"[FATAL ERROR] Could not open the menu");
             return;
         }
@@ -860,13 +860,21 @@ void open_menu(Config con) {
     // Print the title
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
+    Print(L"[DEBUG] the number of keys: %d \n", con->num_keys);
+    Print(L"[DEBUG] the number of keys: %d \n", config->num_keys);
+
     // Create entries list
     entries_list *list_entries;
 
     // Init entries list
     list_entries = init_entries_list();
 
-    // Add a entry
+    // Add entries
+    for(int i = 0; i < config->num_keys; i++) {
+        if (StrCmp(atou(config->keys[i]), L"name") == 0) {
+            add_a_entry(atou(config->values[i]), &list_entries);
+        }
+    }
 
     // Print entries
     print_entries(list_entries, &pos_x, &pos_y, c);
@@ -967,13 +975,10 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     char *config_txt = read_config_file(esp_root);
     Config *config = config_file_parser(config_txt);
     
-    Print(L"\nKey, Value\n");
-    for (int i = 0; i < config->num_keys; i++) {
-        Print(L"%a, %a\n", config->keys[i], config->values[i]);
-    }
-
-    // Stall
-    uefi_call_wrapper(BS->Stall, 1, 10000000);
+    // Print(L"\nKey, Value\n");
+    // for (int i = 0; i < config->num_keys; i++) {
+    //     Print(L"%a, %a\n", config->keys[i], config->values[i]);
+    // }
 
     // Open a menu
     open_menu(config);
