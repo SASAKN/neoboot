@@ -997,7 +997,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // End timer
     uefi_call_wrapper(RT->GetTime, 2, &end_time, NULL);
     UINTN end_time_second = 0;
-
+ 
     // 分が違う場合
     end_time_second += (end_time.Minute - start_time.Minute) * 60;
 
