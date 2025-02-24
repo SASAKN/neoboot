@@ -811,7 +811,7 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
 }
 
 // Open the menu
-void open_menu(Config **con) {
+void open_menu(Config con) {
 
     EFI_STATUS status;
     UINTN c, r;
@@ -819,7 +819,7 @@ void open_menu(Config **con) {
     UINTN length;
     UINT32 selected_index = 0; // デフォルトで0が選択される
     static int count_opened = 0;
-    static Config **config = NULL;
+    static Config config;
 
     // ユーザーがメニューを開いた回数を記録
     count_opened += 1;
@@ -860,6 +860,8 @@ void open_menu(Config **con) {
     // Print the title
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
+    Print(L"%d", config.num_keys);
+
     // Create entries list
     entries_list *list_entries;
 
@@ -867,11 +869,10 @@ void open_menu(Config **con) {
     list_entries = init_entries_list();
 
     // Add a entry
-    Print(L"init");
-    for (int i = 0; i < (*config)->num_keys; i++) {
+    for (int i = 0; i < config.num_keys; i++) {
         Print(L"loop");
         // if (StrCmp(atou(config->keys[i]), L"kernel") == 0) {
-            Print(L"[debug] %s\n", atou((*config)->values[i]));
+            // Print(L"[debug] %s\n", atou((*config)->values[i]));
             // add_a_entry(atou(config->values[i]), &list_entries);
         // }
     }
@@ -984,7 +985,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     uefi_call_wrapper(BS->Stall, 1, 10000000);
 
     // Open a menu
-    open_menu(&config);
+    open_menu(config);
 
     // Free up memory
     FreePool(map.buffer);
