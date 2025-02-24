@@ -701,7 +701,7 @@ void determine_command(CHAR16 *buffer) {
 
     } else if (StrCmp(buffer, L"menu") == 0 ) {
         // Back to the menu
-        open_menu(NULL);
+        open_menu((void 0));
     } else if (StrCmp(buffer, L"") == 0) {
         Print(L"\nneoboot >");
         return;
@@ -750,7 +750,7 @@ void open_console() {
                 buffer_index++;
                 
             } else if (key.ScanCode == SCAN_ESC) {
-                open_menu(NULL);
+                open_menu();
             } else {
                 
                 buffer[buffer_index] = '\0'; // コマンドの終端
@@ -860,8 +860,6 @@ void open_menu(Config con) {
     // Print the title
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
-    Print(L"%d", config.num_keys);
-
     // Create entries list
     entries_list *list_entries;
 
@@ -869,13 +867,6 @@ void open_menu(Config con) {
     list_entries = init_entries_list();
 
     // Add a entry
-    for (int i = 0; i < config.num_keys; i++) {
-        Print(L"loop");
-        // if (StrCmp(atou(config->keys[i]), L"kernel") == 0) {
-            // Print(L"[debug] %s\n", atou((*config)->values[i]));
-            // add_a_entry(atou(config->values[i]), &list_entries);
-        // }
-    }
 
     // Print entries
     print_entries(list_entries, &pos_x, &pos_y, c);
@@ -985,7 +976,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     uefi_call_wrapper(BS->Stall, 1, 10000000);
 
     // Open a menu
-    open_menu(&config);
+    open_menu(config);
 
     // Free up memory
     FreePool(map.buffer);

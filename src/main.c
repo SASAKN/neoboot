@@ -860,8 +860,6 @@ void open_menu(Config con) {
     // Print the title
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
-    Print(L"%d", config.num_keys);
-
     // Create entries list
     entries_list *list_entries;
 
@@ -869,13 +867,6 @@ void open_menu(Config con) {
     list_entries = init_entries_list();
 
     // Add a entry
-    for (int i = 0; i < config.num_keys; i++) {
-        Print(L"loop");
-        // if (StrCmp(atou(config->keys[i]), L"kernel") == 0) {
-            // Print(L"[debug] %s\n", atou((*config)->values[i]));
-            // add_a_entry(atou(config->values[i]), &list_entries);
-        // }
-    }
 
     // Print entries
     print_entries(list_entries, &pos_x, &pos_y, c);
