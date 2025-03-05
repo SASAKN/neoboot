@@ -12,6 +12,9 @@ IMAGE_PATH="${BUILD_DIR}/neoboot.img"
 # ブートローダーパス
 LOADER_PATH="${BUILD_DIR}/loader.efi"
 
+# カーネルパス
+KERNEL_PATH="${script_dir}/kernel/kernel.elf"
+
 # コンフィグファイルパス
 CONFIG_PATH="${BUILD_DIR}/loader.cfg"
 
@@ -65,6 +68,9 @@ function make_image() {
 
     # ブートローダーファイルを追加
     cp "${LOADER_PATH}" "/Volumes/${VOLUME_NAME}/EFI/BOOT/BOOTX64.efi"
+
+    # カーネルファイルを追加
+    cp "${KERNEL_PATH}" "/Volumes/${VOLUME_NAME}/kernel.elf"
 
     # コンフィグファイルを追加
     cp "${CONFIG_PATH}" "/Volumes/${VOLUME_NAME}/config.cfg"

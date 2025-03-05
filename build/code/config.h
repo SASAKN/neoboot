@@ -23,6 +23,9 @@ typedef struct _OS_MENU_ENTRY {
     // OSの名前
     CHAR16 *os_name;
 
+    // OSのConfig
+    Config *config;
+
     // 選択されているか
     BOOLEAN is_selected;
 

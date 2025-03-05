@@ -40,12 +40,12 @@ void list_bootable_disk(struct bootable_disk_info **disk_info, UINTN *no_of_disk
 
 // Menu
 entries_list *init_entries_list();
-void add_a_entry(CHAR16 *os_name, entries_list **entries);
+void add_a_entry(CHAR16 *os_name, Config *con, entries_list **entries);
 void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c, BOOLEAN is_selected);
 void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c);
 void modify_an_entry_order(entries_list *list_entries, UINT32 new_entry_order);
 void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries);
-void open_menu(Config *con);
+void open_menu(Config *con, EFI_FILE_PROTOCOL *Root);
 
 // Console
 void determine_command(CHAR16 *buffer);
@@ -53,6 +53,10 @@ void open_console();
 
 // Config file
 VOID *read_config_file(EFI_FILE_PROTOCOL *root);
+
+// Kernel File
+void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root);
+void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, entries_list *list_entries);
 
 // Main
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable);

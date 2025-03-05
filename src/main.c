@@ -543,7 +543,7 @@ entries_list *init_entries_list() {
 }
 
 // Add a entry to the struct
-void add_a_entry(CHAR16 *os_name, entries_list **entries) {
+void add_a_entry(CHAR16 *os_name, Config *con, entries_list **entries) {
 
     // Allocate a entry
     if ((*entries)->no_of_entries == 0) {
@@ -567,6 +567,7 @@ void add_a_entry(CHAR16 *os_name, entries_list **entries) {
     UINT32 index = (*entries)->no_of_entries - 1;
     index == 0 ? (is_selected = TRUE) : (is_selected = FALSE); // デフォルトで0が選択される
     (*entries)->entries[index].os_name = os_name; // OSの名前
+    (*entries)->entries[index].config = con; // OSのConfig
     (*entries)->entries[index].is_selected = is_selected; // 選択状態
 
     // Return
@@ -701,7 +702,7 @@ void determine_command(CHAR16 *buffer) {
 
     } else if (StrCmp(buffer, L"menu") == 0 ) {
         // Back to the menu
-        open_menu(NULL);
+        open_menu(NULL, NULL);
     } else if (StrCmp(buffer, L"") == 0) {
         Print(L"\nneoboot >");
         return;
@@ -750,7 +751,7 @@ void open_console() {
                 buffer_index++;
                 
             } else if (key.ScanCode == SCAN_ESC) {
-                open_menu(NULL);
+                open_menu(NULL, NULL);
             } else {
                 
                 buffer[buffer_index] = '\0'; // コマンドの終端
@@ -793,6 +794,7 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
 
     // Read the file content
     buffer_size = ((EFI_FILE_INFO *)buffer)->FileSize;
+    Print(L"[FILE_SIZE] %d", buffer_size);
     FreePool(buffer);
     buffer = AllocatePool(buffer_size);
     status = uefi_call_wrapper(config_file->Read, 3, config_file, &buffer_size, buffer);
@@ -810,8 +812,174 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
     return buffer;
 }
 
+void print_hex_buffer(const unsigned char *buffer, UINTN size) {
+    for (UINTN i = 0; i < size; i++) {
+        Print(L"%02X ", buffer[i]); // 1バイトを2桁の16進数で出力
+        
+        if ((i + 1) % 16 == 0) {
+            Print(L"\r\n"); // 16バイトごとに改行
+        }
+    }
+    Print(L"\r\n"); // 最後の改行
+}
+
+#include <efi.h>
+#include <efilib.h>
+
+void list_directory(EFI_FILE_PROTOCOL *root) {
+    EFI_STATUS status;
+    EFI_FILE_PROTOCOL *dir;
+    EFI_FILE_INFO *file_info;
+    UINTN buffer_size;
+    VOID *buffer;
+
+    // ディレクトリを開く
+    status = uefi_call_wrapper(root->Open, 5, root, &dir, L"\\kernel.elf", EFI_FILE_MODE_READ, EFI_FILE_DIRECTORY);
+    if (EFI_ERROR(status) || dir == NULL) {
+        Print(L"Failed to open directory: %r\n", status);
+        return;
+    }
+
+    // ファイル情報を取得するためのバッファを確保
+    buffer_size = sizeof(EFI_FILE_INFO) + 256;
+    buffer = AllocatePool(buffer_size);
+    if (buffer == NULL) {
+        Print(L"Memory allocation failed\n");
+        uefi_call_wrapper(dir->Close, 1, dir);
+        return;
+    }
+
+    Print(L"Listing directory:\n");
+
+    // ディレクトリ内のファイルを順に取得
+    while (TRUE) {
+        buffer_size = sizeof(EFI_FILE_INFO) + 256;
+        status = uefi_call_wrapper(dir->Read, 3, dir, &buffer_size, buffer);
+        
+        if (EFI_ERROR(status) || buffer_size == 0) {
+            break; // すべてのエントリを読み込んだ
+        }
+
+        file_info = (EFI_FILE_INFO *)buffer;
+        
+        // ファイル名とタイプを表示
+        if (file_info->Attribute & EFI_FILE_DIRECTORY) {
+            Print(L"[DIR]  %s\n", file_info->FileName);
+        } else {
+            Print(L"[FILE] %s  (%d bytes)\n", file_info->FileName, file_info->FileSize);
+        }
+    }
+
+    // クリーンアップ
+    FreePool(buffer);
+    uefi_call_wrapper(dir->Close, 1, dir);
+}
+
+
+void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root) {
+    EFI_FILE_PROTOCOL *kernel_file;
+    EFI_STATUS status;
+    UINTN buffer_size = 0;
+    VOID *buffer = NULL;
+    EFI_FILE_INFO *file_info;
+    CHAR16 *kernel_file_name = file_name;
+
+    Print(L"%s", file_name);
+
+    // Open the kernel file
+    status = uefi_call_wrapper(root->Open, 5, root, &kernel_file, kernel_file_name, EFI_FILE_MODE_READ, 0);
+    if (EFI_ERROR(status) || kernel_file == NULL) {
+        Print(L"Cannot open the kernel file: %r\n", status);
+        return NULL;
+    }
+
+    // Get the kernel file size
+    status = uefi_call_wrapper(kernel_file->GetInfo, 4, kernel_file, &gEfiFileInfoGuid, &buffer_size, NULL);
+    if (status != EFI_BUFFER_TOO_SMALL) {
+        Print(L"Cannot determine file size, status: %x\n", status);
+        uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
+        return NULL;
+    }
+
+    file_info = AllocatePool(buffer_size);
+    if (file_info == NULL) {
+        Print(L"Memory allocation failed for file info\n");
+        uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
+        return NULL;
+    }
+
+    status = uefi_call_wrapper(kernel_file->GetInfo, 4, kernel_file, &gEfiFileInfoGuid, &buffer_size, file_info);
+    Print(L"GetInfo status: %x\n", status); // 追加: デバッグ用
+    if (EFI_ERROR(status)) {
+        Print(L"Cannot get the kernel file info, status: %x\n", status);
+        FreePool(file_info);
+        uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
+        return NULL;
+    }
+
+    buffer_size = file_info->FileSize;
+    Print(L"[DEBUG] File size: %d\n", buffer_size);
+
+    if (file_info == NULL) {
+        Print(L"[DEBUG] file_info is null\n");
+    }
+    
+    // 追加: ファイル名の表示
+    Print(L"File name: %s\n", file_info->FileName);
+
+    FreePool(file_info);
+
+    if (buffer_size == 0) {
+        Print(L"File size is zero\n");
+        uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
+        return NULL;
+    }
+
+    // Reset file position to start
+    status = uefi_call_wrapper(kernel_file->SetPosition, 2, kernel_file, 0);
+    if (EFI_ERROR(status)) {
+        Print(L"Cannot set file position, status: %x\n", status);
+        uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
+        return NULL;
+    }
+
+    buffer = AllocatePool(buffer_size);
+    if (buffer == NULL) {
+        Print(L"Memory allocation failed for file content\n");
+        uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
+        return NULL;
+    }
+
+    // Read the file content
+    status = uefi_call_wrapper(kernel_file->Read, 3, kernel_file, &buffer_size, buffer);
+    if (EFI_ERROR(status) || buffer_size == 0) {
+        Print(L"Cannot read the kernel file, status: %x, size: %d\n", status, buffer_size);
+        FreePool(buffer);
+        buffer = NULL;
+    } else {
+        Print(L"[DEBUG] Successfully read %d bytes\n", buffer_size);
+    }
+
+    // Close the file
+    uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
+
+    return buffer;
+}
+
+
+
+// Open the selected kernel
+void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, entries_list *list_entries) {
+    Config *selected_config = list_entries->entries[selected_index].config;
+    for (int i = 0; i < selected_config->num_keys; i++) {
+        if (StrCmp(atou(selected_config->keys[i]), L"kernel") == 0) {
+            open_kernel_file(atou(selected_config->values[i]), root);
+        }
+    }
+}
+
 // Open the menu
-void open_menu(Config *con) {
+void open_menu(Config *con, EFI_FILE_PROTOCOL *Root) {
 
     EFI_STATUS status;
     UINTN c, r;
@@ -820,6 +988,7 @@ void open_menu(Config *con) {
     UINT32 selected_index = 0; // デフォルトで0が選択される
     static int count_opened = 0;
     static Config *config = NULL;
+    static EFI_FILE_PROTOCOL *root;
 
     // ユーザーがメニューを開いた回数を記録
     count_opened += 1;
@@ -833,8 +1002,14 @@ void open_menu(Config *con) {
             return;
         }
 
+        if (Root == NULL) {
+            Print(L"[FATAL ERROR] Could not open the menu");
+            return;
+        }
+
         // NULLでなければ
         config = con;
+        root = Root;
 
     }
 
@@ -844,6 +1019,9 @@ void open_menu(Config *con) {
 
     // Clear the screen
     uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+
+    list_directory(root);
+
 
     // Get the conosole size
     status = uefi_call_wrapper(ST->ConOut->QueryMode, 4, ST->ConOut, ST->ConOut->Mode->Mode, &c, &r);
@@ -866,10 +1044,10 @@ void open_menu(Config *con) {
     // Init entries list
     list_entries = init_entries_list();
 
-    // Add entries
+    // Add a entry
     for(int i = 0; i < config->num_keys; i++) {
         if (StrCmp(atou(config->keys[i]), L"name") == 0) {
-            add_a_entry(atou(config->values[i]), &list_entries);
+            add_a_entry(atou(config->values[i]), config, &list_entries);
         }
     }
 
@@ -884,7 +1062,9 @@ void open_menu(Config *con) {
             if (key.UnicodeChar != 0) {
                 switch (key.UnicodeChar) {
                     case CHAR_CARRIAGE_RETURN: // Enterキー
-                        redraw_menu(title, c, r, list_entries);
+                        if (root != NULL) {
+                            open_selected_kernel(selected_index, root, list_entries);
+                        }
                         break;
                     case 'c':
                     case 'C':
@@ -972,13 +1152,14 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     char *config_txt = read_config_file(esp_root);
     Config *config = config_file_parser(config_txt);
     
+    // Print config file
     Print(L"\nKey, Value\n");
     for (int i = 0; i < config->num_keys; i++) {
         Print(L"%a, %a\n", config->keys[i], config->values[i]);
     }
 
     // Open a menu
-    open_menu(config);
+    open_menu(config, esp_root);
 
     // Free up memory
     FreePool(map.buffer);
