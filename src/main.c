@@ -884,7 +884,9 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root) {
     EFI_FILE_INFO *file_info;
     CHAR16 *kernel_file_name = file_name;
 
-    Print(L"%s", file_name);
+    buffer_size = (StrLen(file_name) + 2) * sizeof(CHAR16);
+
+    UnicodeSPrint(kernel_file_name, buffer_size, L"\\%s", file_name);   
 
     // Open the kernel file
     status = uefi_call_wrapper(root->Open, 5, root, &kernel_file, kernel_file_name, EFI_FILE_MODE_READ, 0);
@@ -909,9 +911,8 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root) {
     }
 
     status = uefi_call_wrapper(kernel_file->GetInfo, 4, kernel_file, &gEfiFileInfoGuid, &buffer_size, file_info);
-    Print(L"GetInfo status: %x\n", status); // 追加: デバッグ用
     if (EFI_ERROR(status)) {
-        Print(L"Cannot get the kernel file info, status: %x\n", status);
+        Print(L"Cannot get the kernel file info, status: %r\n", status);
         FreePool(file_info);
         uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
         return NULL;
@@ -923,9 +924,6 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root) {
     if (file_info == NULL) {
         Print(L"[DEBUG] file_info is null\n");
     }
-    
-    // 追加: ファイル名の表示
-    Print(L"File name: %s\n", file_info->FileName);
 
     FreePool(file_info);
 
@@ -970,6 +968,13 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root) {
 
 // Open the selected kernel
 void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, entries_list *list_entries) {
+    EFI_FILE_PROTOCOL *kernel_file;
+    EFI_STATUS status;
+    UINTN buffer_size = 0;
+    VOID *buffer = NULL;
+    EFI_FILE_INFO *file_info;
+    CHAR16 *kernel_file_name;
+
     Config *selected_config = list_entries->entries[selected_index].config;
     for (int i = 0; i < selected_config->num_keys; i++) {
         if (StrCmp(atou(selected_config->keys[i]), L"kernel") == 0) {
@@ -1019,8 +1024,6 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root) {
 
     // Clear the screen
     uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
-
-    list_directory(root);
 
 
     // Get the conosole size
