@@ -11,6 +11,7 @@
 #include "memory.h"
 #include "disk.h"
 #include "config.h"
+#include "elf.h"
 
 // Functions
 
@@ -45,7 +46,7 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
 void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c);
 void modify_an_entry_order(entries_list *list_entries, UINT32 new_entry_order);
 void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries);
-void open_menu(Config *con, EFI_FILE_PROTOCOL *Root);
+void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last);
 
 // Console
 void determine_command(CHAR16 *buffer);
@@ -55,11 +56,16 @@ void open_console();
 VOID *read_config_file(EFI_FILE_PROTOCOL *root);
 
 // Kernel File
-void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root);
-void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, entries_list *list_entries);
+void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root, UINTN *file_size);
+void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, entries_list *list_entries, UINT64 *first, UINT64 *last);
+
+// ELF
+void calc_load_address_range(Elf64_Ehdr *ehdr, UINT64 *first, UINT64 *last);
+void copy_load_segments(Elf64_Ehdr *ehdr);
 
 // Main
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable);
+void halt(void);
 
 
 

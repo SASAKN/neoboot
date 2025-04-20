@@ -8,6 +8,12 @@
 #include "disk.h"
 #include "config.h"
 #include "proto.h"
+#include "elf.h"
+
+// halt
+void halt(void) {
+    while (1) __asm__("hlt");
+  }
 
 // Ascii To Unicode
 CHAR16 *atou(CHAR8 *str) {
@@ -156,6 +162,36 @@ char *my_strtok(char *str, const char *delim) {
 
     return start;
 
+}
+
+// Calculate Address
+void calc_load_address_range(Elf64_Ehdr *ehdr, UINT64 *first, UINT64 *last) {
+    Elf64_Phdr *phdr = (Elf64_Phdr*)((UINT64)ehdr + ehdr->e_phoff);
+    *first = MAX_UINT64;
+    *last = 0;
+    for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i) {
+        if (phdr[i].p_type != PT_LOAD) {
+            continue;
+        }
+        *first = MIN(*first, phdr[i].p_vaddr);
+        *last = MAX(*last, phdr[i].p_paddr + phdr[i].p_memsz);
+    }
+}
+
+// Copy load segments
+void copy_load_segments(Elf64_Ehdr *ehdr) {
+    Elf64_Phdr *phdr = (Elf64_Phdr*)((UINT64)ehdr + ehdr->e_phoff);
+    for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i) {
+        if (phdr[i].p_type != PT_LOAD) {
+            continue;
+        }
+
+        UINT64 segment_in_file = (UINT64)ehdr + phdr[i].p_offset;
+        CopyMem((VOID *)phdr[i].p_vaddr, (VOID *)segment_in_file, phdr[i].p_filesz);
+
+        UINTN remain_bytes = phdr[i].p_memsz - phdr[i].p_filesz;
+        SetMem((VOID *)(phdr[i].p_vaddr + phdr[i].p_filesz), remain_bytes, 0);
+    }
 }
 
 // Split
@@ -702,7 +738,7 @@ void determine_command(CHAR16 *buffer) {
 
     } else if (StrCmp(buffer, L"menu") == 0 ) {
         // Back to the menu
-        open_menu(NULL, NULL);
+        open_menu(NULL, NULL, 0, 0);
     } else if (StrCmp(buffer, L"") == 0) {
         Print(L"\nneoboot >");
         return;
@@ -751,7 +787,7 @@ void open_console() {
                 buffer_index++;
                 
             } else if (key.ScanCode == SCAN_ESC) {
-                open_menu(NULL, NULL);
+                open_menu(NULL, NULL, 0, 0);
             } else {
                 
                 buffer[buffer_index] = '\0'; // コマンドの終端
@@ -823,9 +859,6 @@ void print_hex_buffer(const unsigned char *buffer, UINTN size) {
     Print(L"\r\n"); // 最後の改行
 }
 
-#include <efi.h>
-#include <efilib.h>
-
 void list_directory(EFI_FILE_PROTOCOL *root) {
     EFI_STATUS status;
     EFI_FILE_PROTOCOL *dir;
@@ -876,7 +909,7 @@ void list_directory(EFI_FILE_PROTOCOL *root) {
 }
 
 
-void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root) {
+void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root, UINTN *file_size) {
     EFI_FILE_PROTOCOL *kernel_file;
     EFI_STATUS status;
     UINTN buffer_size = 0;
@@ -958,6 +991,9 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root) {
         Print(L"[DEBUG] Successfully read %d bytes\n", buffer_size);
     }
 
+    // ファイルサイズの設定
+    *file_size = buffer_size;
+
     // Close the file
     uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
 
@@ -967,24 +1003,54 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root) {
 
 
 // Open the selected kernel
-void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, entries_list *list_entries) {
+void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, entries_list *list_entries, UINT64 *first, UINT64 *last) {
     EFI_FILE_PROTOCOL *kernel_file;
     EFI_STATUS status;
     UINTN buffer_size = 0;
     VOID *buffer = NULL;
     EFI_FILE_INFO *file_info;
     CHAR16 *kernel_file_name;
+    UINT64 kernel_first_addr, kernel_last_addr;
 
+    // Reading the kernel file
     Config *selected_config = list_entries->entries[selected_index].config;
     for (int i = 0; i < selected_config->num_keys; i++) {
         if (StrCmp(atou(selected_config->keys[i]), L"kernel") == 0) {
-            open_kernel_file(atou(selected_config->values[i]), root);
+            buffer = open_kernel_file(atou(selected_config->values[i]), root, &buffer_size);
         }
     }
+
+    if (buffer == NULL) {
+        Print(L"Cannot open the kernel file\n");
+        halt();
+        return;
+    }
+
+    // Allocate the kernel file
+    Elf64_Ehdr *kernel_ehdr = (Elf64_Ehdr *)buffer;
+    calc_load_address_range(kernel_ehdr, &kernel_first_addr, &kernel_last_addr);
+    UINTN num_pages = (kernel_last_addr - kernel_first_addr + 0xfff) / 0x1000;
+    status = uefi_call_wrapper(BS->AllocatePages, 4, AllocateAddress, EfiLoaderData, num_pages, &kernel_first_addr);
+    if (EFI_ERROR(status)) {
+        Print(L"Failed to allocate memory for kernel: %r\n", status);
+        FreePool(buffer);
+        halt();
+    }
+
+    // Copy the segments
+    copy_load_segments(kernel_ehdr);
+    Print(L"Kernel : 0x%0lx - 0x%0lx\n", kernel_first_addr, kernel_last_addr);
+    FreePool(buffer);
+
+    *first = kernel_first_addr;
+    *last = kernel_last_addr;
+
+    return;
+
 }
 
 // Open the menu
-void open_menu(Config *con, EFI_FILE_PROTOCOL *Root) {
+void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last) {
 
     EFI_STATUS status;
     UINTN c, r;
@@ -994,6 +1060,7 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root) {
     static int count_opened = 0;
     static Config *config = NULL;
     static EFI_FILE_PROTOCOL *root;
+    static UINT64 First, Last = 0;
 
     // ユーザーがメニューを開いた回数を記録
     count_opened += 1;
@@ -1015,6 +1082,8 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root) {
         // NULLでなければ
         config = con;
         root = Root;
+        First = *first;
+        Last = *last;
 
     }
 
@@ -1066,7 +1135,8 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root) {
                 switch (key.UnicodeChar) {
                     case CHAR_CARRIAGE_RETURN: // Enterキー
                         if (root != NULL) {
-                            open_selected_kernel(selected_index, root, list_entries);
+                            open_selected_kernel(selected_index, root, list_entries, &First, &Last);
+                            return;
                         }
                         break;
                     case 'c':
@@ -1162,7 +1232,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     }
 
     // Open a menu
-    open_menu(config, esp_root);
+    UINT64 first, last;
+    open_menu(config, esp_root, &first, &last);
 
     // Free up memory
     FreePool(map.buffer);
@@ -1179,6 +1250,8 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
 
     // Print
     Print(L"\nBoot Time: %us \n", end_time_second);
+
+    // Exit Boot Services
 
     // All Done
     Print(L"All Done!\n");
