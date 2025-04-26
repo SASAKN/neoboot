@@ -11,35 +11,42 @@
 #include "elf.h"
 
 // halt
-void halt(void) {
-    while (1) __asm__("hlt");
-  }
+void halt(void)
+{
+    while (1)
+        __asm__("hlt");
+}
 
 // Ascii To Unicode
-CHAR16 *atou(CHAR8 *str) {
-    if (!str) return NULL; 
+CHAR16 *atou(CHAR8 *str)
+{
+    if (!str)
+        return NULL;
 
-    UINTN len = my_strlen(str); 
-    CHAR16 *buffer = AllocatePool((len + 1) * sizeof(CHAR16)); 
-    if (!buffer) return NULL;  
+    UINTN len = my_strlen(str);
+    CHAR16 *buffer = AllocatePool((len + 1) * sizeof(CHAR16));
+    if (!buffer)
+        return NULL;
 
-    CHAR16 *ptr = buffer; 
+    CHAR16 *ptr = buffer;
 
-    while (*str) {
-        *ptr++ = (CHAR16)*str++; 
+    while (*str)
+    {
+        *ptr++ = (CHAR16)*str++;
     }
     *ptr = L'\0';
 
     return buffer;
 }
 
-
 // Strlen
-unsigned int my_strlen(const char *str) {
+unsigned int my_strlen(const char *str)
+{
 
     unsigned int str_size = 0;
 
-    while(*str != '\0') {
+    while (*str != '\0')
+    {
         str++;
         str_size++;
     }
@@ -48,10 +55,12 @@ unsigned int my_strlen(const char *str) {
 }
 
 // Strcpy
-char *my_strcpy(char *dest, const char *src) {
+char *my_strcpy(char *dest, const char *src)
+{
     char *original_dest = dest;
 
-    while (*src) {
+    while (*src)
+    {
         *dest = *src;
         dest++;
         src++;
@@ -63,55 +72,65 @@ char *my_strcpy(char *dest, const char *src) {
 }
 
 // Strchr
-char *my_strchr(const char *str, int c) {
+char *my_strchr(const char *str, int c)
+{
 
     // 一文字づつ探す
-    while(*str != '\0') {
-        if (*str == (char)c) {
+    while (*str != '\0')
+    {
+        if (*str == (char)c)
+        {
             return (char *)str;
         }
         str++;
     }
 
     // 終端文字を探している場合
-    if (c == '\0') {
+    if (c == '\0')
+    {
         return (char *)str;
     }
 
     return NULL;
-
 }
 
-void split_key_value(char *str, char **key, char **value) {
+void split_key_value(char *str, char **key, char **value)
+{
     char *eq = my_strchr(str, '=');
-    if (eq) {
+    if (eq)
+    {
         *eq = '\0';
         *key = str;
         *value = eq + 1;
-    } else {
+    }
+    else
+    {
         *key = NULL;
         *value = NULL;
     }
 }
 
-
 // Strdup
-char *my_strdup(const char *s) {
+char *my_strdup(const char *s)
+{
 
     // Caluclate size of string
     int len = 0;
-    while (s[len] != '\0') {
+    while (s[len] != '\0')
+    {
         len++;
     }
 
     // Reserve memory
     char *dup = (char *)AllocatePool(len + 1);
-    if (dup == NULL) {
+    if (dup == NULL)
+    {
         return NULL;
     }
 
     // Copy string
-    for (int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++)
+    {
         dup[i] = s[i];
     }
     dup[len] = '\0'; // NULL終端
@@ -120,57 +139,68 @@ char *my_strdup(const char *s) {
 }
 
 // Strtok
-char *my_strtok(char *str, const char *delim) {
+char *my_strtok(char *str, const char *delim)
+{
 
     static char *next_token = NULL; // トークンを保存
-    
-    if (str == NULL) {
+
+    if (str == NULL)
+    {
         str = next_token;
     }
 
-    if (str == NULL) {
+    if (str == NULL)
+    {
         return NULL;
     }
 
-    while (*str && my_strchr(delim, *str)) {
+    while (*str && my_strchr(delim, *str))
+    {
         str++;
     }
 
-    if (*str == '\0') {
+    if (*str == '\0')
+    {
         return NULL;
     }
 
     char *start = str; // トークンの開始位置を保存
 
     // トークンの終端を探す
-    while( *str && !my_strchr(delim, *str)) {
+    while (*str && !my_strchr(delim, *str))
+    {
         str++;
     }
 
-    if (*str) {
+    if (*str)
+    {
         *str = '\0';
         next_token = str + 1; // 次の文字へ
-        
+
         // This does NOT have in original C library
-        if (delim == ",") {
+        if (delim == ",")
+        {
             next_token = str + 2; // Ignore "\n" after ","
         }
-
-    } else {
+    }
+    else
+    {
         next_token = NULL; // 次のトークンなし
     }
 
     return start;
-
 }
 
 // Calculate Address
-void calc_load_address_range(Elf64_Ehdr *ehdr, UINT64 *first, UINT64 *last) {
-    Elf64_Phdr *phdr = (Elf64_Phdr*)((UINT64)ehdr + ehdr->e_phoff);
+void calc_load_address_range(Elf64_Ehdr *ehdr, UINT64 *first, UINT64 *last)
+{
+    Elf64_Phdr *phdr = (Elf64_Phdr *)((UINT64)ehdr + ehdr->e_phoff);
     *first = MAX_UINT64;
     *last = 0;
-    for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i) {
-        if (phdr[i].p_type != PT_LOAD) {
+    for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i)
+    {
+        if (phdr[i].p_type != PT_LOAD)
+        {
             continue;
         }
         *first = MIN(*first, phdr[i].p_vaddr);
@@ -179,10 +209,13 @@ void calc_load_address_range(Elf64_Ehdr *ehdr, UINT64 *first, UINT64 *last) {
 }
 
 // Copy load segments
-void copy_load_segments(Elf64_Ehdr *ehdr) {
-    Elf64_Phdr *phdr = (Elf64_Phdr*)((UINT64)ehdr + ehdr->e_phoff);
-    for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i) {
-        if (phdr[i].p_type != PT_LOAD) {
+void copy_load_segments(Elf64_Ehdr *ehdr)
+{
+    Elf64_Phdr *phdr = (Elf64_Phdr *)((UINT64)ehdr + ehdr->e_phoff);
+    for (Elf64_Half i = 0; i < ehdr->e_phnum; ++i)
+    {
+        if (phdr[i].p_type != PT_LOAD)
+        {
             continue;
         }
 
@@ -195,11 +228,13 @@ void copy_load_segments(Elf64_Ehdr *ehdr) {
 }
 
 // Split
-char **split(char *txt, const char *delimiter, int *count) {
+char **split(char *txt, const char *delimiter, int *count)
+{
 
     // Array of tokens
     char **tokens = AllocatePool(100 * sizeof(char));
-    if (tokens == NULL) {
+    if (tokens == NULL)
+    {
         return NULL;
     }
 
@@ -209,7 +244,8 @@ char **split(char *txt, const char *delimiter, int *count) {
     char *token = my_strtok(txt, ",");
 
     // Copy tokens from text to array
-    while (token != NULL && i < 100) {
+    while (token != NULL && i < 100)
+    {
         tokens[i] = token;
         i++;
         token = my_strtok(NULL, ",");
@@ -226,7 +262,8 @@ char **split(char *txt, const char *delimiter, int *count) {
 }
 
 // AsciiSPrint
-UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...) {
+UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...)
+{
     va_list marker;
     UINTN num_printed;
 
@@ -237,28 +274,33 @@ UINTN EFIAPI AsciiSPrint(CHAR8 *buffer, UINTN buffer_size, CONST CHAR8 *str, ...
 }
 
 // Add spaces around text
-CHAR16 *add_spaces_around_text(const CHAR16 *text, UINTN num_spaces) {
+CHAR16 *add_spaces_around_text(const CHAR16 *text, UINTN num_spaces)
+{
     UINTN text_length = StrLen(text);
     UINTN new_length = text_length + 2 * num_spaces;
 
     // AllocatePoolでメモリーを確保
     CHAR16 *new_text = AllocatePool((new_length + 1) * sizeof(CHAR16));
-    if (new_text == NULL) {
+    if (new_text == NULL)
+    {
         return NULL;
     }
 
     // 先頭にスペースを挿入
-    for (UINTN i = 0; i < num_spaces; i++) {
+    for (UINTN i = 0; i < num_spaces; i++)
+    {
         new_text[i] = ' ';
     }
 
     // 元の文字列を挿入
-    for (UINTN i = 0; i < text_length; i++) {
+    for (UINTN i = 0; i < text_length; i++)
+    {
         new_text[num_spaces + i] = text[i];
     }
 
     // 後尾にスペースを挿入
-    for (UINTN i = 0; i < num_spaces; i++) {
+    for (UINTN i = 0; i < num_spaces; i++)
+    {
         new_text[num_spaces + text_length + i] = ' ';
     }
 
@@ -269,7 +311,8 @@ CHAR16 *add_spaces_around_text(const CHAR16 *text, UINTN num_spaces) {
 }
 
 // Config file Parser
-Config *config_file_parser(char *config_txt) {
+Config *config_file_parser(char *config_txt)
+{
     char **lines;
     int count;
     Config *config = AllocatePool(sizeof(config));
@@ -280,7 +323,8 @@ Config *config_file_parser(char *config_txt) {
     config->keys = AllocatePool(sizeof(char *) * count);
     config->values = AllocatePool(sizeof(char *) * count);
 
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++)
+    {
 
         char *key, *value = NULL;
         unsigned int key_size, value_size = 0;
@@ -309,34 +353,53 @@ Config *config_file_parser(char *config_txt) {
 
     // Return
     return config;
-
 };
 
 // Get memory type
-const CHAR16 *get_memtype(EFI_MEMORY_TYPE type) {
-    switch (type) {
-        case EfiReservedMemoryType: return L"EfiReservedMemoryType";
-        case EfiLoaderCode: return L"EfiLoaderCode";
-        case EfiLoaderData: return L"EfiLoaderData";
-        case EfiBootServicesCode: return L"EfiBootServicesCode";
-        case EfiBootServicesData: return L"EfiBootServicesData";
-        case EfiRuntimeServicesCode: return L"EfiRuntimeServicesCode";
-        case EfiRuntimeServicesData: return L"EfiRuntimeServicesData";
-        case EfiConventionalMemory: return L"EfiConventionalMemory";
-        case EfiUnusableMemory: return L"EfiUnusableMemory";
-        case EfiACPIReclaimMemory: return L"EfiACPIReclaimMemory";
-        case EfiACPIMemoryNVS: return L"EfiACPIMemoryNVS";
-        case EfiMemoryMappedIO: return L"EfiMemoryMappedIO";
-        case EfiMemoryMappedIOPortSpace: return L"EfiMemoryMappedIOPortSpace";
-        case EfiPalCode: return L"EfiPalCode";
-        case EfiPersistentMemory: return L"EfiPersistentMemory";
-        case EfiMaxMemoryType: return L"EfiMaxMemoryType";
-        default: return L"InvalidMemoryType";
+const CHAR16 *get_memtype(EFI_MEMORY_TYPE type)
+{
+    switch (type)
+    {
+    case EfiReservedMemoryType:
+        return L"EfiReservedMemoryType";
+    case EfiLoaderCode:
+        return L"EfiLoaderCode";
+    case EfiLoaderData:
+        return L"EfiLoaderData";
+    case EfiBootServicesCode:
+        return L"EfiBootServicesCode";
+    case EfiBootServicesData:
+        return L"EfiBootServicesData";
+    case EfiRuntimeServicesCode:
+        return L"EfiRuntimeServicesCode";
+    case EfiRuntimeServicesData:
+        return L"EfiRuntimeServicesData";
+    case EfiConventionalMemory:
+        return L"EfiConventionalMemory";
+    case EfiUnusableMemory:
+        return L"EfiUnusableMemory";
+    case EfiACPIReclaimMemory:
+        return L"EfiACPIReclaimMemory";
+    case EfiACPIMemoryNVS:
+        return L"EfiACPIMemoryNVS";
+    case EfiMemoryMappedIO:
+        return L"EfiMemoryMappedIO";
+    case EfiMemoryMappedIOPortSpace:
+        return L"EfiMemoryMappedIOPortSpace";
+    case EfiPalCode:
+        return L"EfiPalCode";
+    case EfiPersistentMemory:
+        return L"EfiPersistentMemory";
+    case EfiMaxMemoryType:
+        return L"EfiMaxMemoryType";
+    default:
+        return L"InvalidMemoryType";
     }
 }
 
 // Save memory map file
-EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp_root) {
+EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp_root)
+{
     char buffer[4096];
     EFI_STATUS status;
     UINTN size;
@@ -355,7 +418,8 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp
     ASSERT(!EFI_ERROR(status));
 
     // Write memory map
-    for (UINTN i = 0; i < map->entry; i++) {
+    for (UINTN i = 0; i < map->entry; i++)
+    {
         EFI_MEMORY_DESCRIPTOR *desc = (EFI_MEMORY_DESCRIPTOR *)((char *)map->buffer + map->desc_size * i);
         size = AsciiSPrint(buffer, sizeof(buffer), "| %02u | %016x | %02x | %20ls | %016x | %016x | %016x | %3d | %2ls %5lx | \n", i, desc, desc->Type, get_memtype(desc->Type), desc->PhysicalStart, desc->VirtualStart, desc->NumberOfPages, desc->NumberOfPages, (desc->Attribute & EFI_MEMORY_RUNTIME) ? L"RT" : L"", desc->Attribute & 0xffffflu);
 
@@ -370,7 +434,8 @@ EFI_STATUS save_memmap(memmap *map, EFI_FILE_PROTOCOL *f, EFI_FILE_PROTOCOL *esp
 }
 
 // Open protocol
-EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI_HANDLE ImageHandle, UINT32 attr) {
+EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI_HANDLE ImageHandle, UINT32 attr)
+{
     EFI_STATUS status = uefi_call_wrapper(BS->OpenProtocol, 6, handle, guid, protocol, ImageHandle, NULL, attr);
     ASSERT(!EFI_ERROR(status));
 
@@ -378,7 +443,8 @@ EFI_STATUS open_protocol(EFI_HANDLE handle, EFI_GUID *guid, VOID **protocol, EFI
 }
 
 // List disks
-void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_of_disks) {
+void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_of_disks)
+{
     EFI_STATUS status;
     EFI_HANDLE *handleBuffer;
     UINTN handleCount;
@@ -389,14 +455,16 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 
     // Locate all handles that support the Block I/O protocol
     status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &BlockIoProtocol, NULL, &handleCount, &handleBuffer);
-    if (EFI_ERROR(status)) {
+    if (EFI_ERROR(status))
+    {
         Print(L"Failed to locate handles: %r\n", status);
         return;
     }
 
     // Allocate the disk_info struct in the memory
     *disk_info = AllocatePool(handleCount * sizeof(struct disk_info));
-    if (*disk_info == NULL) {
+    if (*disk_info == NULL)
+    {
         Print(L"Failed to allocate memory\n");
         FreePool(handleBuffer);
         return;
@@ -406,17 +474,20 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
     *no_of_disks = handleCount;
 
     // Iterate over each handle
-    for (UINTN i = 0; i < handleCount; i++) {
+    for (UINTN i = 0; i < handleCount; i++)
+    {
         // Open Block I/O protocol
         status = open_protocol(handleBuffer[i], &BlockIoProtocol, (void **)&BlockIo, ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-        if (EFI_ERROR(status)) {
+        if (EFI_ERROR(status))
+        {
             Print(L"Failed to open Block I/O protocol: %r\n", status);
             continue;
         }
 
         // Open Disk I/O protocol
         status = open_protocol(handleBuffer[i], &DiskIoProtocol, (void **)&DiskIo, ImageHandle, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-        if (EFI_ERROR(status)) {
+        if (EFI_ERROR(status))
+        {
             Print(L"Failed to open Disk I/O protocol: %r\n", status);
             continue;
         }
@@ -433,13 +504,12 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
         Print(L"  WriteCaching: %u\n", BlockIo->Media->WriteCaching);
 
         // Check the media
-        if (!BlockIo->Media->MediaPresent) {
+        if (!BlockIo->Media->MediaPresent)
+        {
             Print(L"  No media present.\n");
             (*disk_info)[i].gpt_found = 0;
             continue;
         }
-
-        
 
         // Put Media into disk_info
         (*disk_info)[i].Media = *(BlockIo->Media);
@@ -448,13 +518,15 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
         CHAR8 headerBuffer[512];
         EFI_PARTITION_TABLE_HEADER *GptHeader;
         status = uefi_call_wrapper(DiskIo->ReadDisk, 5, DiskIo, BlockIo->Media->MediaId, 1 * BlockIo->Media->BlockSize, sizeof(headerBuffer), headerBuffer);
-        if (EFI_ERROR(status)) {
+        if (EFI_ERROR(status))
+        {
             Print(L"  Failed to read GPT header: %r\n", status);
             continue;
         }
 
         // Validate GPT header
-        if (!strncmpa(headerBuffer, EFI_PTAB_HEADER_ID, 8) == 0) {
+        if (!strncmpa(headerBuffer, EFI_PTAB_HEADER_ID, 8) == 0)
+        {
             Print(L"GPT Header is Not Found \n");
             (*disk_info)[i].gpt_found = 0;
             continue;
@@ -479,23 +551,25 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 
         // Read partition entries
         UINT8 partitionBuffer[BlockIo->Media->BlockSize];
-        
+
         // Allocate partition_entries structure
         (*disk_info)[i].partition_entries = AllocatePool(GptHeader->NumberOfPartitionEntries * sizeof(EFI_PARTITION_ENTRY));
 
         // Get the number of partition
         (*disk_info)[i].no_of_partition = GptHeader->NumberOfPartitionEntries;
 
-
-        for (UINTN j = 0; j < GptHeader->NumberOfPartitionEntries; j++) {
+        for (UINTN j = 0; j < GptHeader->NumberOfPartitionEntries; j++)
+        {
             status = uefi_call_wrapper(DiskIo->ReadDisk, 5, DiskIo, BlockIo->Media->MediaId, GptHeader->PartitionEntryLBA * BlockIo->Media->BlockSize + j * sizeof(EFI_PARTITION_ENTRY), sizeof(partitionBuffer), partitionBuffer);
-            if (EFI_ERROR(status)) {
+            if (EFI_ERROR(status))
+            {
                 Print(L"    Failed to read partition entry: %r\n", status);
                 continue;
             }
 
             EFI_PARTITION_ENTRY *PartitionEntry = (EFI_PARTITION_ENTRY *)partitionBuffer;
-            if (PartitionEntry->PartitionTypeGUID.Data1 != 0 || PartitionEntry->PartitionTypeGUID.Data2 != 0 || PartitionEntry->PartitionTypeGUID.Data3 != 0 || PartitionEntry->PartitionTypeGUID.Data4[0] != 0) {
+            if (PartitionEntry->PartitionTypeGUID.Data1 != 0 || PartitionEntry->PartitionTypeGUID.Data2 != 0 || PartitionEntry->PartitionTypeGUID.Data3 != 0 || PartitionEntry->PartitionTypeGUID.Data4[0] != 0)
+            {
                 Print(L"    Partition %u:\n", j);
                 Print(L"      StartingLBA: %lu\n", PartitionEntry->StartingLBA);
                 Print(L"      EndingLBA: %lu\n", PartitionEntry->EndingLBA);
@@ -511,7 +585,8 @@ void list_disks(EFI_HANDLE ImageHandle, struct disk_info **disk_info, UINTN *no_
 }
 
 // List Bootable Disk
-void list_bootable_disk(struct bootable_disk_info **disk_info, UINTN *no_of_disks) {
+void list_bootable_disk(struct bootable_disk_info **disk_info, UINTN *no_of_disks)
+{
     EFI_STATUS status;
 
     // Handle
@@ -525,7 +600,8 @@ void list_bootable_disk(struct bootable_disk_info **disk_info, UINTN *no_of_disk
 
     // Get FS Protocols
     status = uefi_call_wrapper(BS->LocateHandleBuffer, 5, ByProtocol, &gEfiSimpleFileSystemProtocolGuid, NULL, &handle_count, &handle_buffer);
-    if (EFI_ERROR(status)) {
+    if (EFI_ERROR(status))
+    {
         Print(L"Failed to locate handles\n");
         return;
     }
@@ -536,13 +612,14 @@ void list_bootable_disk(struct bootable_disk_info **disk_info, UINTN *no_of_disk
     *no_of_disks = handle_count;
 
     // Iterate over each handle
-    for (UINTN i = 0; i < handle_count; i++) {
+    for (UINTN i = 0; i < handle_count; i++)
+    {
 
         // Select Device Handle
         device_handle = handle_buffer[i];
 
         // Get a Simple FS Protocol
-        status = uefi_call_wrapper(BS->HandleProtocol, 3, device_handle, &gEfiSimpleFileSystemProtocolGuid, (VOID **) &fs);
+        status = uefi_call_wrapper(BS->HandleProtocol, 3, device_handle, &gEfiSimpleFileSystemProtocolGuid, (VOID **)&fs);
         ASSERT(!EFI_ERROR(status));
 
         // Open Root Directory
@@ -558,40 +635,46 @@ void list_bootable_disk(struct bootable_disk_info **disk_info, UINTN *no_of_disk
 
     // Free
     FreePool(handle_buffer);
-
 }
 
 // Init a struct for the menu
-entries_list *init_entries_list() {
+entries_list *init_entries_list()
+{
 
     // Allocate the struct
     entries_list *entries = AllocatePool(sizeof(entries_list));
 
     // Initallize
-    if (entries != NULL) {
+    if (entries != NULL)
+    {
         entries->entries = NULL;
         entries->no_of_entries = 0;
         entries->selected_entry_number = 0;
     }
 
     return entries;
-
 }
 
 // Add a entry to the struct
-void add_a_entry(CHAR16 *os_name, Config *con, entries_list **entries) {
+void add_a_entry(CHAR16 *os_name, Config *con, entries_list **entries)
+{
 
     // Allocate a entry
-    if ((*entries)->no_of_entries == 0) {
+    if ((*entries)->no_of_entries == 0)
+    {
         (*entries)->entries = AllocatePool(sizeof(entry));
-        if ((*entries)->entries == NULL) {
+        if ((*entries)->entries == NULL)
+        {
             return;
         }
         (*entries)->no_of_entries = 1;
-    } else {
+    }
+    else
+    {
         // Reallocate a entry
-        entry *new_entries = ReallocatePool((*entries)->entries, ((*entries)->no_of_entries * sizeof(entry)), ( ((*entries)->no_of_entries + 1) * sizeof(entry)));
-        if (new_entries == NULL) {
+        entry *new_entries = ReallocatePool((*entries)->entries, ((*entries)->no_of_entries * sizeof(entry)), (((*entries)->no_of_entries + 1) * sizeof(entry)));
+        if (new_entries == NULL)
+        {
             return;
         }
         (*entries)->entries = new_entries;
@@ -602,17 +685,17 @@ void add_a_entry(CHAR16 *os_name, Config *con, entries_list **entries) {
     BOOLEAN is_selected;
     UINT32 index = (*entries)->no_of_entries - 1;
     index == 0 ? (is_selected = TRUE) : (is_selected = FALSE); // デフォルトで0が選択される
-    (*entries)->entries[index].os_name = os_name; // OSの名前
-    (*entries)->entries[index].config = con; // OSのConfig
-    (*entries)->entries[index].is_selected = is_selected; // 選択状態
+    (*entries)->entries[index].os_name = os_name;              // OSの名前
+    (*entries)->entries[index].config = con;                   // OSのConfig
+    (*entries)->entries[index].is_selected = is_selected;      // 選択状態
 
     // Return
     return;
-
 }
 
 // Print a entry to the menu
-void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c, BOOLEAN is_selected) {
+void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y, UINTN c, BOOLEAN is_selected)
+{
 
     EFI_STATUS status;
     UINTN length;
@@ -626,13 +709,14 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
     UINTN font;
     is_selected == 0 ? (font = not_selected) : (font = selected);
 
-    // Get length name 
+    // Get length name
     length = StrLen(name);
 
     // Calculate the entry text position
     *pos_x = (c - length) / 2;
     *pos_y += 3;
-    if (no_of_entries == 0) {
+    if (no_of_entries == 0)
+    {
         *pos_y += 2;
     }
 
@@ -645,7 +729,7 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
 
     // Set the background color and font color
     uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, font);
-    
+
     // Print the entry
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, name);
 
@@ -654,49 +738,54 @@ void print_a_entry(CHAR16 *name, UINTN no_of_entries, UINTN *pos_x, UINTN *pos_y
 
     // Return
     return;
-
 }
 
-
 // Print entries
-void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c) {
+void print_entries(entries_list *entries, UINTN *pos_x, UINTN *pos_y, UINTN c)
+{
 
     EFI_STATUS status;
 
     // if entries is NULL, return
-    if (entries == NULL) {
+    if (entries == NULL)
+    {
         return;
     }
 
     // Print entries
-    for (UINTN i = 0; i < entries->no_of_entries; i++) {
+    for (UINTN i = 0; i < entries->no_of_entries; i++)
+    {
         print_a_entry(entries->entries[i].os_name, i, pos_x, pos_y, c, entries->entries[i].is_selected);
     }
-
 }
 
 // エントリー番号の変更
-void modify_an_entry_order(entries_list *list_entries, UINT32 new_entry_order) {
+void modify_an_entry_order(entries_list *list_entries, UINT32 new_entry_order)
+{
 
     // Change the order
     list_entries->selected_entry_number = new_entry_order;
 
     // Change the state
-    for (UINT32 i = 0; i < list_entries->no_of_entries; i++) {
-        if (i == new_entry_order) {
+    for (UINT32 i = 0; i < list_entries->no_of_entries; i++)
+    {
+        if (i == new_entry_order)
+        {
             list_entries->entries[i].is_selected = TRUE;
-        } else {
+        }
+        else
+        {
             list_entries->entries[i].is_selected = FALSE;
         }
     }
 
     // Return
     return;
-
 }
 
 // Redraw the menu
-void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries) {
+void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries)
+{
 
     EFI_STATUS status;
     UINTN pos_x, pos_y;
@@ -724,36 +813,42 @@ void redraw_menu(CHAR16 *title, UINTN c, UINTN r, entries_list *list_entries) {
 
     // Return
     return;
-
 }
 
 // コマンドの判別
-void determine_command(CHAR16 *buffer) {
+void determine_command(CHAR16 *buffer)
+{
 
     // コマンドを実行
-    if ( StrCmp(buffer, L"help") == 0) {
+    if (StrCmp(buffer, L"help") == 0)
+    {
 
         // Shows help
         Print(L"\nNEOBOOT Console\nCommands\n  1.help - shows help\n  2.menu - back to menu\n  3.start [number] - start any entry\n  4.version - shows version of neoboot\n  5.memmap - shows memory map\n  6.pcinfo - shows info of your pc\n");
-
-    } else if (StrCmp(buffer, L"menu") == 0 ) {
+    }
+    else if (StrCmp(buffer, L"menu") == 0)
+    {
         // Back to the menu
         open_menu(NULL, NULL, 0, 0);
-    } else if (StrCmp(buffer, L"") == 0) {
+    }
+    else if (StrCmp(buffer, L"") == 0)
+    {
         Print(L"\nneoboot >");
         return;
-    } else {
+    }
+    else
+    {
         Print(L"\nUnknown Command : %s", buffer);
     }
 
     // コンソールの表示
     Print(L"\nneoboot >");
     return;
-
 }
 
 // Open the console
-void open_console() {
+void open_console()
+{
 
     EFI_STATUS status;
 
@@ -772,38 +867,43 @@ void open_console() {
 
     // Main Loop
     EFI_INPUT_KEY key;
-    while (TRUE) {
+    while (TRUE)
+    {
 
         // Reauest keytype
         status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
 
         // Request Commands
-        if (!EFI_ERROR(status)) {
-            if (key.UnicodeChar != CHAR_CARRIAGE_RETURN) {
+        if (!EFI_ERROR(status))
+        {
+            if (key.UnicodeChar != CHAR_CARRIAGE_RETURN)
+            {
 
                 // Save texts and Print
                 Print(L"%c", key.UnicodeChar);
                 buffer[buffer_index] = key.UnicodeChar;
                 buffer_index++;
-                
-            } else if (key.ScanCode == SCAN_ESC) {
+            }
+            else if (key.ScanCode == SCAN_ESC)
+            {
                 open_menu(NULL, NULL, 0, 0);
-            } else {
-                
+            }
+            else
+            {
+
                 buffer[buffer_index] = '\0'; // コマンドの終端
-                buffer_index = 0; // バッファーも初めに戻る
+                buffer_index = 0;            // バッファーも初めに戻る
 
                 determine_command(buffer); // コマンドの判別
-
             }
         }
-
     }
 }
 
 // Read config file
-VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
-    
+VOID *read_config_file(EFI_FILE_PROTOCOL *root)
+{
+
     EFI_FILE_PROTOCOL *config_file;
     EFI_STATUS status;
     CHAR16 *file_name = L"\\config.cfg";
@@ -812,19 +912,24 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
 
     // Open the config file
     status = uefi_call_wrapper(root->Open, 5, root, &config_file, file_name, EFI_FILE_MODE_READ, 0);
-    if (EFI_ERROR(status)) {
+    if (EFI_ERROR(status))
+    {
         Print(L"Cannot open the config file\n");
     }
 
     // Get the config file size
     status = uefi_call_wrapper(config_file->GetInfo, 4, config_file, &gEfiFileInfoGuid, &buffer_size, NULL);
-    if (status == EFI_BUFFER_TOO_SMALL) {
+    if (status == EFI_BUFFER_TOO_SMALL)
+    {
         buffer = AllocatePool(buffer_size);
         status = uefi_call_wrapper(config_file->GetInfo, 4, config_file, &gEfiFileInfoGuid, &buffer_size, buffer);
-        if (EFI_ERROR(status)) {
+        if (EFI_ERROR(status))
+        {
             Print(L"Cannot get the config file size\n");
         }
-    } else {
+    }
+    else
+    {
         Print(L"Cannot determine file size\n");
     }
 
@@ -834,7 +939,8 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
     FreePool(buffer);
     buffer = AllocatePool(buffer_size);
     status = uefi_call_wrapper(config_file->Read, 3, config_file, &buffer_size, buffer);
-    if (EFI_ERROR(status)) {
+    if (EFI_ERROR(status))
+    {
         Print(L"Cannot read the config file\n");
     }
 
@@ -848,18 +954,22 @@ VOID *read_config_file(EFI_FILE_PROTOCOL *root) {
     return buffer;
 }
 
-void print_hex_buffer(const unsigned char *buffer, UINTN size) {
-    for (UINTN i = 0; i < size; i++) {
+void print_hex_buffer(const unsigned char *buffer, UINTN size)
+{
+    for (UINTN i = 0; i < size; i++)
+    {
         Print(L"%02X ", buffer[i]); // 1バイトを2桁の16進数で出力
-        
-        if ((i + 1) % 16 == 0) {
+
+        if ((i + 1) % 16 == 0)
+        {
             Print(L"\r\n"); // 16バイトごとに改行
         }
     }
     Print(L"\r\n"); // 最後の改行
 }
 
-void list_directory(EFI_FILE_PROTOCOL *root) {
+void list_directory(EFI_FILE_PROTOCOL *root)
+{
     EFI_STATUS status;
     EFI_FILE_PROTOCOL *dir;
     EFI_FILE_INFO *file_info;
@@ -868,7 +978,8 @@ void list_directory(EFI_FILE_PROTOCOL *root) {
 
     // ディレクトリを開く
     status = uefi_call_wrapper(root->Open, 5, root, &dir, L"\\kernel.elf", EFI_FILE_MODE_READ, EFI_FILE_DIRECTORY);
-    if (EFI_ERROR(status) || dir == NULL) {
+    if (EFI_ERROR(status) || dir == NULL)
+    {
         Print(L"Failed to open directory: %r\n", status);
         return;
     }
@@ -876,7 +987,8 @@ void list_directory(EFI_FILE_PROTOCOL *root) {
     // ファイル情報を取得するためのバッファを確保
     buffer_size = sizeof(EFI_FILE_INFO) + 256;
     buffer = AllocatePool(buffer_size);
-    if (buffer == NULL) {
+    if (buffer == NULL)
+    {
         Print(L"Memory allocation failed\n");
         uefi_call_wrapper(dir->Close, 1, dir);
         return;
@@ -885,20 +997,25 @@ void list_directory(EFI_FILE_PROTOCOL *root) {
     Print(L"Listing directory:\n");
 
     // ディレクトリ内のファイルを順に取得
-    while (TRUE) {
+    while (TRUE)
+    {
         buffer_size = sizeof(EFI_FILE_INFO) + 256;
         status = uefi_call_wrapper(dir->Read, 3, dir, &buffer_size, buffer);
-        
-        if (EFI_ERROR(status) || buffer_size == 0) {
+
+        if (EFI_ERROR(status) || buffer_size == 0)
+        {
             break; // すべてのエントリを読み込んだ
         }
 
         file_info = (EFI_FILE_INFO *)buffer;
-        
+
         // ファイル名とタイプを表示
-        if (file_info->Attribute & EFI_FILE_DIRECTORY) {
+        if (file_info->Attribute & EFI_FILE_DIRECTORY)
+        {
             Print(L"[DIR]  %s\n", file_info->FileName);
-        } else {
+        }
+        else
+        {
             Print(L"[FILE] %s  (%d bytes)\n", file_info->FileName, file_info->FileSize);
         }
     }
@@ -908,8 +1025,8 @@ void list_directory(EFI_FILE_PROTOCOL *root) {
     uefi_call_wrapper(dir->Close, 1, dir);
 }
 
-
-void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root, UINTN *file_size) {
+void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root, UINTN *file_size)
+{
     EFI_FILE_PROTOCOL *kernel_file;
     EFI_STATUS status;
     UINTN buffer_size = 0;
@@ -919,32 +1036,36 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root, UINTN *file_s
 
     buffer_size = (StrLen(file_name) + 2) * sizeof(CHAR16);
 
-    UnicodeSPrint(kernel_file_name, buffer_size, L"\\%s", file_name);   
+    UnicodeSPrint(kernel_file_name, buffer_size, L"\\%s", file_name);
 
     // Open the kernel file
     status = uefi_call_wrapper(root->Open, 5, root, &kernel_file, kernel_file_name, EFI_FILE_MODE_READ, 0);
-    if (EFI_ERROR(status) || kernel_file == NULL) {
+    if (EFI_ERROR(status) || kernel_file == NULL)
+    {
         Print(L"Cannot open the kernel file: %r\n", status);
         return NULL;
     }
 
     // Get the kernel file size
     status = uefi_call_wrapper(kernel_file->GetInfo, 4, kernel_file, &gEfiFileInfoGuid, &buffer_size, NULL);
-    if (status != EFI_BUFFER_TOO_SMALL) {
+    if (status != EFI_BUFFER_TOO_SMALL)
+    {
         Print(L"Cannot determine file size, status: %x\n", status);
         uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
         return NULL;
     }
 
     file_info = AllocatePool(buffer_size);
-    if (file_info == NULL) {
+    if (file_info == NULL)
+    {
         Print(L"Memory allocation failed for file info\n");
         uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
         return NULL;
     }
 
     status = uefi_call_wrapper(kernel_file->GetInfo, 4, kernel_file, &gEfiFileInfoGuid, &buffer_size, file_info);
-    if (EFI_ERROR(status)) {
+    if (EFI_ERROR(status))
+    {
         Print(L"Cannot get the kernel file info, status: %r\n", status);
         FreePool(file_info);
         uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
@@ -954,13 +1075,15 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root, UINTN *file_s
     buffer_size = file_info->FileSize;
     Print(L"[DEBUG] File size: %d\n", buffer_size);
 
-    if (file_info == NULL) {
+    if (file_info == NULL)
+    {
         Print(L"[DEBUG] file_info is null\n");
     }
 
     FreePool(file_info);
 
-    if (buffer_size == 0) {
+    if (buffer_size == 0)
+    {
         Print(L"File size is zero\n");
         uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
         return NULL;
@@ -968,14 +1091,16 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root, UINTN *file_s
 
     // Reset file position to start
     status = uefi_call_wrapper(kernel_file->SetPosition, 2, kernel_file, 0);
-    if (EFI_ERROR(status)) {
+    if (EFI_ERROR(status))
+    {
         Print(L"Cannot set file position, status: %x\n", status);
         uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
         return NULL;
     }
 
     buffer = AllocatePool(buffer_size);
-    if (buffer == NULL) {
+    if (buffer == NULL)
+    {
         Print(L"Memory allocation failed for file content\n");
         uefi_call_wrapper(kernel_file->Close, 1, kernel_file);
         return NULL;
@@ -983,11 +1108,14 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root, UINTN *file_s
 
     // Read the file content
     status = uefi_call_wrapper(kernel_file->Read, 3, kernel_file, &buffer_size, buffer);
-    if (EFI_ERROR(status) || buffer_size == 0) {
+    if (EFI_ERROR(status) || buffer_size == 0)
+    {
         Print(L"Cannot read the kernel file, status: %x, size: %d\n", status, buffer_size);
         FreePool(buffer);
         buffer = NULL;
-    } else {
+    }
+    else
+    {
         Print(L"[DEBUG] Successfully read %d bytes\n", buffer_size);
     }
 
@@ -1000,10 +1128,9 @@ void *open_kernel_file(CHAR16 *file_name, EFI_FILE_PROTOCOL *root, UINTN *file_s
     return buffer;
 }
 
-
-
 // Open the selected kernel
-void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, entries_list *list_entries, UINT64 *first, UINT64 *last) {
+void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, entries_list *list_entries, UINT64 *first, UINT64 *last)
+{
     EFI_FILE_PROTOCOL *kernel_file;
     EFI_STATUS status;
     UINTN buffer_size = 0;
@@ -1014,13 +1141,16 @@ void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, 
 
     // Reading the kernel file
     Config *selected_config = list_entries->entries[selected_index].config;
-    for (int i = 0; i < selected_config->num_keys; i++) {
-        if (StrCmp(atou(selected_config->keys[i]), L"kernel") == 0) {
+    for (int i = 0; i < selected_config->num_keys; i++)
+    {
+        if (StrCmp(atou(selected_config->keys[i]), L"kernel") == 0)
+        {
             buffer = open_kernel_file(atou(selected_config->values[i]), root, &buffer_size);
         }
     }
 
-    if (buffer == NULL) {
+    if (buffer == NULL)
+    {
         Print(L"Cannot open the kernel file\n");
         halt();
         return;
@@ -1031,7 +1161,8 @@ void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, 
     calc_load_address_range(kernel_ehdr, &kernel_first_addr, &kernel_last_addr);
     UINTN num_pages = (kernel_last_addr - kernel_first_addr + 0xfff) / 0x1000;
     status = uefi_call_wrapper(BS->AllocatePages, 4, AllocateAddress, EfiLoaderData, num_pages, &kernel_first_addr);
-    if (EFI_ERROR(status)) {
+    if (EFI_ERROR(status))
+    {
         Print(L"Failed to allocate memory for kernel: %r\n", status);
         FreePool(buffer);
         halt();
@@ -1046,11 +1177,11 @@ void open_selected_kernel(unsigned int selected_index, EFI_FILE_PROTOCOL *root, 
     *last = kernel_last_addr;
 
     return;
-
 }
 
 // Open the menu
-void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last) {
+void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last)
+{
 
     EFI_STATUS status;
     UINTN c, r;
@@ -1064,17 +1195,20 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last
 
     // ユーザーがメニューを開いた回数を記録
     count_opened += 1;
-    
+
     // メニューを開いた回数によって動作を変える
-    if (count_opened == 1) {
+    if (count_opened == 1)
+    {
 
         // 1回目にNULLであれば
-        if (con == NULL) {
+        if (con == NULL)
+        {
             Print(L"[FATAL ERROR] Could not open the menu");
             return;
         }
 
-        if (Root == NULL) {
+        if (Root == NULL)
+        {
             Print(L"[FATAL ERROR] Could not open the menu");
             return;
         }
@@ -1084,7 +1218,6 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last
         root = Root;
         First = *first;
         Last = *last;
-
     }
 
     // Set the title
@@ -1093,7 +1226,6 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last
 
     // Clear the screen
     uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
-
 
     // Get the conosole size
     status = uefi_call_wrapper(ST->ConOut->QueryMode, 4, ST->ConOut, ST->ConOut->Mode->Mode, &c, &r);
@@ -1106,7 +1238,7 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last
     // Set the cursor
     status = uefi_call_wrapper(ST->ConOut->SetCursorPosition, 3, ST->ConOut, pos_x, pos_y);
     ASSERT(!EFI_ERROR(status));
-    
+
     // Print the title
     uefi_call_wrapper(ST->ConOut->OutputString, 2, ST->ConOut, title);
 
@@ -1117,8 +1249,10 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last
     list_entries = init_entries_list();
 
     // Add a entry
-    for(int i = 0; i < config->num_keys; i++) {
-        if (StrCmp(atou(config->keys[i]), L"name") == 0) {
+    for (int i = 0; i < config->num_keys; i++)
+    {
+        if (StrCmp(atou(config->keys[i]), L"name") == 0)
+        {
             add_a_entry(atou(config->values[i]), config, &list_entries);
         }
     }
@@ -1126,70 +1260,84 @@ void open_menu(Config *con, EFI_FILE_PROTOCOL *Root, UINT64 *first, UINT64 *last
     // Print entries
     print_entries(list_entries, &pos_x, &pos_y, c);
 
-    // Main Loop 
+    // Main Loop
     EFI_INPUT_KEY key;
-    while (TRUE) {
+    while (TRUE)
+    {
         status = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &key);
-        if (!EFI_ERROR(status)) {
-            if (key.UnicodeChar != 0) {
-                switch (key.UnicodeChar) {
-                    case CHAR_CARRIAGE_RETURN: // Enterキー
-                        if (root != NULL) {
-                            open_selected_kernel(selected_index, root, list_entries, &First, &Last);
-                            return;
-                        }
-                        break;
-                    case 'c':
-                    case 'C':
-                        open_console();
-                    default:
-                        break;
+        if (!EFI_ERROR(status))
+        {
+            if (key.UnicodeChar != 0)
+            {
+                switch (key.UnicodeChar)
+                {
+                case CHAR_CARRIAGE_RETURN: // Enterキー
+                    if (root != NULL)
+                    {
+                        open_selected_kernel(selected_index, root, list_entries, &First, &Last);
+                        *first = First;
+                        *last = Last;
+                        Print(L"Kernel : 0x%0lx - 0x%0lx\n", First, Last);
+                        return;
+                    }
+                    break;
+                case 'c':
+                case 'C':
+                    open_console();
+                default:
+                    break;
                 }
-            } else {
-                switch (key.ScanCode) {
-                    case SCAN_UP:
+            }
+            else
+            {
+                switch (key.ScanCode)
+                {
+                case SCAN_UP:
 
-                        // 0は上に行けないし、再描画する必要もない
-                        if (selected_index  == 0) {
-                            break;
-                        }
-
-                        // Indexの変更
-                        selected_index = selected_index - 1;
-
-                        // 表示順を変更
-                        modify_an_entry_order(list_entries, selected_index);
-
-                        // 再描画
-                        redraw_menu(title, c, r, list_entries);
+                    // 0は上に行けないし、再描画する必要もない
+                    if (selected_index == 0)
+                    {
                         break;
-                    case SCAN_DOWN:
+                    }
 
-                        // 合計数より下には行けないし、再描画する必要もない
-                        if (selected_index  == list_entries->no_of_entries - 1) {
-                            break;
-                        }
+                    // Indexの変更
+                    selected_index = selected_index - 1;
 
-                        // Indexの変更
-                        selected_index = selected_index + 1;
+                    // 表示順を変更
+                    modify_an_entry_order(list_entries, selected_index);
 
-                        // 表示順を変更
-                        modify_an_entry_order(list_entries, selected_index);
+                    // 再描画
+                    redraw_menu(title, c, r, list_entries);
+                    break;
+                case SCAN_DOWN:
 
-                        // 再描画
-                        redraw_menu(title, c, r, list_entries);
+                    // 合計数より下には行けないし、再描画する必要もない
+                    if (selected_index == list_entries->no_of_entries - 1)
+                    {
                         break;
-                    case SCAN_ESC:
-                        return; // BIOSに戻る
-                    default:
-                        break;
+                    }
+
+                    // Indexの変更
+                    selected_index = selected_index + 1;
+
+                    // 表示順を変更
+                    modify_an_entry_order(list_entries, selected_index);
+
+                    // 再描画
+                    redraw_menu(title, c, r, list_entries);
+                    break;
+                case SCAN_ESC:
+                    return; // BIOSに戻る
+                default:
+                    break;
                 }
             }
         }
     }
 }
 
-EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
+EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+{
     // Initialize
     EFI_STATUS status;
     InitializeLib(ImageHandle, SystemTable);
@@ -1224,10 +1372,11 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Open config file
     char *config_txt = read_config_file(esp_root);
     Config *config = config_file_parser(config_txt);
-    
+
     // Print config file
     Print(L"\nKey, Value\n");
-    for (int i = 0; i < config->num_keys; i++) {
+    for (int i = 0; i < config->num_keys; i++)
+    {
         Print(L"%a, %a\n", config->keys[i], config->values[i]);
     }
 
@@ -1235,13 +1384,15 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     UINT64 first, last;
     open_menu(config, esp_root, &first, &last);
 
+    Print(L"Kernel : 0x%0lx - 0x%0lx\n", first, last);
+
     // Free up memory
     FreePool(map.buffer);
 
     // End timer
     uefi_call_wrapper(RT->GetTime, 2, &end_time, NULL);
     UINTN end_time_second = 0;
- 
+
     // 分が違う場合
     end_time_second += (end_time.Minute - start_time.Minute) * 60;
 
@@ -1251,13 +1402,71 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable
     // Print
     Print(L"\nBoot Time: %us \n", end_time_second);
 
-    // Exit Boot Services
+    EFI_MEMORY_DESCRIPTOR *mem_map = NULL;
+    UINTN mem_map_size = 0;
+    UINTN map_key;
+    UINTN desc_size;
+    UINT32 desc_ver;
 
-    // All Done
-    Print(L"All Done!\n");
+    // Step 1: 初回呼び出しでサイズ確認
+    status = uefi_call_wrapper(BS->GetMemoryMap, 5,
+                               &mem_map_size, mem_map, &map_key, &desc_size, &desc_ver);
 
-    // Wait for a minute
-    uefi_call_wrapper(BS->Stall, 1, 5000000);
+    if (status != EFI_BUFFER_TOO_SMALL)
+    {
+        Print(L"Initial GetMemoryMap failed: %r\n", status);
+        return status;
+    }
+
+    // Step 2: 必要なメモリ確保（念のため余裕をもたせる）
+    mem_map_size += desc_size * 8;
+    status = uefi_call_wrapper(BS->AllocatePool, 3, EfiLoaderData,
+                               mem_map_size, (void **)&mem_map);
+    if (EFI_ERROR(status))
+    {
+        Print(L"Failed to allocate memory for memory map: %r\n", status);
+        return status;
+    }
+    Print(L"Memory map obtained, map key: %d\n", map.map_key);
+    Print(L"Memory map entry: %p\n", map.entry);
+    Print(L"Memory map size: %d\n", map.buffer_size);
+
+    // 手動でバッファサイズを設定
+    map.buffer_size = 4096 * 4; // 例: バッファサイズを4KBに設定
+    map.buffer = LibMemoryMap(&map.entry, &map.map_key, &map.desc_size, &map.desc_ver);
+
+    Print(L"Updated map buffer size: %d\n", map.buffer_size);
+    Print(L"Updated map key: %d\n", map.map_key);
+
+    // Step 3: ExitBootServices 直前の再取得
+    status = uefi_call_wrapper(BS->GetMemoryMap, 5,
+                               &mem_map_size, mem_map, &map_key, &desc_size, &desc_ver);
+    if (EFI_ERROR(status))
+    {
+        Print(L"Second GetMemoryMap failed: %r\n", status);
+        return status;
+    }
+
+    // Step 4: Exit Boot Services
+    status = uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, map_key);
+    if (EFI_ERROR(status))
+    {
+        Print(L"ExitBootServices failed: %r\n", status);
+        return status;
+    }
+
+    // // Get the Entry Point Address
+    // UINT64 entry_addr;
+    // entry_addr = *(UINT64 *)(first + 0x18);
+
+    // // Jump to the kernel
+    // __asm__ volatile (
+    //     "movq %0, %%rax\n"
+    //     "jmp *%%rax\n"
+    //     : // No output
+    //     : "r"(entry_addr)
+    //     : "%rax"
+    // );
 
     return EFI_SUCCESS;
 }

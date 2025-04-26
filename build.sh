@@ -40,7 +40,8 @@ function loader_build() {
     cp ${script_dir}/src/*.h "${BUILD_DIR}/code/"
 
     # 統合ファイルをコンパイル
-    x86_64-elf-gcc -I"${script_dir}/gnu-efi/inc" -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -c "${MERGED_FILE}" -o "${BUILD_DIR}/merged.o"
+    x86_64-elf-gcc -I"${script_dir}/gnu-efi/inc" -fpic -O0 -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-red-zone -maccumulate-outgoing-args -g -c "${MERGED_FILE}" -o "${BUILD_DIR}/merged.o"
+
 
     # オブジェクトファイルをリンク
     x86_64-elf-ld -z noexecstack -shared -Bsymbolic -L"${script_dir}/gnu-efi/x86_64/lib" -L"${script_dir}/gnu-efi/x86_64/gnuefi" -T"${script_dir}/gnu-efi/gnuefi/elf_x86_64_efi.lds" "${script_dir}/gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o" "${BUILD_DIR}/merged.o" -o "${BUILD_DIR}/main.so" -lgnuefi -lefi
@@ -101,6 +102,7 @@ function run_image_cui() {
     -drive if=ide,index=0,media=disk,format=raw,file="${IMAGE_PATH}" \
     -device nec-usb-xhci,id=xhci \
     -device usb-mouse -device usb-kbd \
+    -s -S \
     -nographic
 }
 
